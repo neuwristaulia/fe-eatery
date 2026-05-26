@@ -6,7 +6,7 @@ import Database from "better-sqlite3";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 
 const connection = new Database("dev.db");
-const adapter = new PrismaBetterSqlite3(connection);
+const adapter = new PrismaBetterSqlite3(connection as any);
 const prisma = new PrismaClient({ adapter });
 
 export const authOptions: NextAuthOptions = {

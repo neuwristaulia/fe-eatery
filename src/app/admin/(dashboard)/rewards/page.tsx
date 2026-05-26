@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Gift, Plus } from "lucide-react";
 
 const rewards = [
-  { id: "RW-01", name: "Free Kopi Loman", points: 500, status: "Active", image: "https://images.unsplash.com/photo-1541167760496-1628856ab772?w=100" },
+  { id: "RW-01", name: "Free Kopi e-Eatery", points: 500, status: "Active", image: "https://images.unsplash.com/photo-1541167760496-1628856ab772?w=100" },
   { id: "RW-02", name: "Kaya Toast Gratis", points: 750, status: "Active", image: "https://images.unsplash.com/photo-1525268771113-32d9e9021a97?w=100" },
   { id: "RW-03", name: "Diskon 50% All Menu", points: 2000, status: "Inactive", image: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=100" },
 ];

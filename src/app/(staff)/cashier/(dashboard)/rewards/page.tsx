@@ -51,7 +51,7 @@ export default function CashierRewards() {
                 <Gift className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                 <input 
                   type="text" 
-                  placeholder="Enter Voucher Code (e.g. LOMAN20)" 
+                  placeholder="Enter Voucher Code (e.g. EEATERY20)" 
                   className="w-full pl-10 pr-4 py-3 rounded-xl border border-border/50 bg-background focus:outline-none focus:border-orange-500"
                 />
               </div>

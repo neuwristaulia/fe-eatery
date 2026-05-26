@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { DUMMY_CATEGORIES, DUMMY_MENU, MenuItem } from "@/lib/dummyMenu";
 import { usePOSStore } from "@/store/usePOSStore";
-import { useStaffStore } from "@/store/useStaffStore";
+import { useAdminStore } from "@/store/useAdminStore";
 import { Search, ArrowLeft, Trash2, Edit3, CheckCircle, ShoppingBag, Gift, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
@@ -24,18 +23,22 @@ export function POSMenu() {
     addToCart, removeFromCart, updateQty, updateNotes, removeDiscount, resetPOS, setOrderType, setSelectedTable, setCustomerInfo
   } = usePOSStore();
 
-  const filteredMenu = DUMMY_MENU.filter((item) => {
+  const { menus, categories } = useAdminStore();
+  const menuCategories = ["All", ...categories.map(c => c.name)];
+
+  const filteredMenu = menus.filter((item) => {
     const matchesCat = activeCategory === "All" || item.category === activeCategory;
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCat && matchesSearch;
   });
 
-  const handleAddItem = (item: MenuItem) => {
+  const handleAddItem = (item: any) => {
     if (item.stock <= 0) {
       toast.error(`${item.name} is out of stock`);
       return;
     }
-    addToCart({ id: item.id, name: item.name, price: item.price, qty: 1 });
+    const numPrice = Number(item.price.replace(/[^0-9]/g, ''));
+    addToCart({ id: item.id, name: item.name, price: numPrice, qty: 1 });
     toast.success(`Added ${item.name}`, { duration: 1000 });
   };
 
@@ -92,7 +95,7 @@ export function POSMenu() {
 
         {/* Categories */}
         <div className="flex gap-2 p-4 overflow-x-auto hide-scrollbar bg-card border-b border-border">
-          {DUMMY_CATEGORIES.map((cat) => (
+          {menuCategories.map((cat) => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
@@ -111,7 +114,19 @@ export function POSMenu() {
         {/* Menu Grid */}
         <div className="flex-1 overflow-y-auto p-4 bg-muted/20">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {filteredMenu.map((item) => (
+            {filteredMenu.map((item) => {
+              const numPrice = Number(item.price.replace(/[^0-9]/g, ''));
+              let stockColor = "text-green-500";
+              let stockBg = "bg-green-500/10";
+              if (item.stock === 0) {
+                stockColor = "text-red-500";
+                stockBg = "bg-red-500/10";
+              } else if (item.stock < 10) {
+                stockColor = "text-yellow-500";
+                stockBg = "bg-yellow-500/10";
+              }
+
+              return (
               <button
                 key={item.id}
                 onClick={() => handleAddItem(item)}
@@ -121,20 +136,26 @@ export function POSMenu() {
                   item.stock > 0 ? "hover:border-primary/50 cursor-pointer shadow-sm" : "opacity-50 cursor-not-allowed grayscale"
                 )}
               >
-                <div className="w-full aspect-square bg-muted rounded-xl mb-3 flex items-center justify-center text-5xl">
-                  {item.image}
+                <div className="w-full aspect-square bg-muted rounded-xl mb-3 flex items-center justify-center overflow-hidden">
+                  {item.image.length > 5 ? (
+                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-5xl">{item.image}</span>
+                  )}
                 </div>
                 <h4 className="font-bold mb-1 line-clamp-2 min-h-[40px]">{item.name}</h4>
                 <div className="flex items-center justify-between w-full mt-auto">
-                  <span className="text-primary font-bold">Rp {item.price.toLocaleString("id-ID")}</span>
+                  <span className="text-primary font-bold">Rp {numPrice.toLocaleString("id-ID")}</span>
                   {item.stock > 0 ? (
-                    <span className="text-xs text-muted-foreground">{item.stock} left</span>
+                    <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", stockColor, stockBg)}>
+                      {item.stock} left
+                    </span>
                   ) : (
-                    <span className="text-xs text-red-500 font-bold">Sold Out</span>
+                    <span className="text-xs text-red-500 bg-red-500/10 font-bold px-2 py-0.5 rounded-full">Out of Stock</span>
                   )}
                 </div>
               </button>
-            ))}
+            )})}
           </div>
         </div>
       </div>

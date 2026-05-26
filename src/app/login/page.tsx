@@ -53,7 +53,7 @@ export default function LoginPage() {
               transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 15 }}
               className="mx-auto w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden mb-4 shadow-xl border-4 border-transparent bg-secondary"
             >
-              <img src="/logo.png" alt="Kedai Loman Logo" className="w-full h-full object-cover hover:scale-110 transition-transform duration-500" />
+              <img src="/logo.png" alt="e-Eatery Logo" className="w-full h-full object-cover hover:scale-110 transition-transform duration-500" />
             </motion.div>
             
             <CardDescription className="text-base text-muted-foreground/80 max-w-[250px] mx-auto leading-relaxed mt-4">

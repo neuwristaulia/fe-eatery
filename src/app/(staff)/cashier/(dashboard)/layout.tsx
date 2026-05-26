@@ -24,12 +24,7 @@ export default function CashierLayout({
     }
   }, [staffAuthenticated, router]);
 
-  // Auto-collapse sidebar when on the new order page
-  React.useEffect(() => {
-    if (pathname?.includes('/order/new')) {
-      setCollapsed(true);
-    }
-  }, [pathname]);
+
 
   if (!staffAuthenticated) return <div className="min-h-screen flex items-center justify-center">Redirecting to login...</div>;
 

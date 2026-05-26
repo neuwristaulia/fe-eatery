@@ -12,7 +12,7 @@ export default function KitchenLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [collapsed, setCollapsed] = React.useState(true); // Default collapsed for kitchen to save space
+  const [collapsed, setCollapsed] = React.useState(false); // Default expanded for kitchen
   const router = useRouter();
   const { staffAuthenticated, staffData, logout, login } = useStaffStore();
 

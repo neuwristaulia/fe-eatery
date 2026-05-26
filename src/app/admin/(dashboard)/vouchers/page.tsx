@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { TicketPercent, Plus, Copy } from "lucide-react";
 
 const vouchers = [
-  { id: "VCH-01", code: "LOMANBARU", discount: "20%", maxUsage: 100, used: 45, expiry: "31 Dec 2023", status: "Active" },
+  { id: "VCH-01", code: "EEATERYBARU", discount: "20%", maxUsage: 100, used: 45, expiry: "31 Dec 2023", status: "Active" },
   { id: "VCH-02", code: "HEMAT50", discount: "Rp 50.000", maxUsage: 50, used: 50, expiry: "15 Nov 2023", status: "Fully Used" },
 ];
 

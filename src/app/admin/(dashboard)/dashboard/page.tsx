@@ -15,7 +15,7 @@ const stats = [
 ];
 
 const recentOrders = [
-  { id: "ORD-001", customer: "Budi Santoso", items: "2x Kopi Loman, 1x Kaya Toast", total: "Rp 85.000", status: "ready" },
+  { id: "ORD-001", customer: "Budi Santoso", items: "2x Kopi e-Eatery, 1x Kaya Toast", total: "Rp 85.000", status: "ready" },
   { id: "ORD-002", customer: "Siti Aminah", items: "1x Nasi Goreng Spesial", total: "Rp 45.000", status: "created" },
   { id: "ORD-003", customer: "Andi Wijaya", items: "3x Teh Tarik, 2x Roti Bakar", total: "Rp 110.000", status: "completed" },
   { id: "ORD-004", customer: "Dewi Lestari", items: "1x Mie Goreng Seafood", total: "Rp 55.000", status: "confirmed" },
@@ -46,7 +46,7 @@ export default function AdminDashboardPage() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-serif font-bold">Dashboard</h1>
-          <p className="text-muted-foreground">Overview performa Kedai Loman hari ini.</p>
+          <p className="text-muted-foreground">Overview performa e-Eatery hari ini.</p>
         </div>
         <button 
           onClick={() => {

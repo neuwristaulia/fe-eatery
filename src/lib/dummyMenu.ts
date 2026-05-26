@@ -15,7 +15,7 @@ export const DUMMY_MENU: MenuItem[] = [
   { id: "M002", name: "Americano", category: "Coffee", price: 20000, stock: 45, image: "☕" },
   { id: "M003", name: "Cappuccino", category: "Coffee", price: 25000, stock: 30, image: "☕" },
   { id: "M004", name: "Cafe Latte", category: "Coffee", price: 25000, stock: 30, image: "☕" },
-  { id: "M005", name: "Kopi Loman Signature", category: "Coffee", price: 28000, stock: 20, image: "🧋" },
+  { id: "M005", name: "Kopi e-Eatery Signature", category: "Coffee", price: 28000, stock: 20, image: "🧋" },
   
   // Non Coffee
   { id: "M101", name: "Matcha Latte", category: "Non Coffee", price: 28000, stock: 25, image: "🍵" },

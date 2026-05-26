@@ -60,7 +60,7 @@ export default function StockMonitoringPage() {
           </h1>
           <p className="text-muted-foreground mt-1">Monitor inventory levels and identify low-stock items.</p>
         </div>
-        <ExportStockButton data={filteredStock} filename="loman_inventory" />
+        <ExportStockButton data={filteredStock} filename="eeatery_inventory" />
       </div>
 
       {/* Analytics Summary */}

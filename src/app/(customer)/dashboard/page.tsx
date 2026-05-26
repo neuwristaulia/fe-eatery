@@ -18,7 +18,7 @@ export default function DashboardPage() {
   
   const addToCart = useStore((state) => state.addToCart);
   
-  const bestSellers = menuItems.filter(item => ["kopi-loman", "kaya-toast", "nasi-goreng"].includes(item.id));
+  const bestSellers = menuItems.filter(item => ["kopi-eeatery", "kaya-toast", "nasi-goreng"].includes(item.id));
 
   const handleAddToCart = (item: any, e: React.MouseEvent) => {
     e.preventDefault();
@@ -242,7 +242,7 @@ export default function DashboardPage() {
               <h2 className="text-2xl md:text-3xl font-serif font-bold flex items-center gap-2">
                 Paling Diminati <Flame className="w-6 h-6 text-primary" />
               </h2>
-              <p className="text-muted-foreground mt-1">Hidangan favorit pelanggan Kedai Loman</p>
+              <p className="text-muted-foreground mt-1">Hidangan favorit pelanggan e-Eatery</p>
             </div>
             <Link href="/menu">
               <Button variant="outline" className="rounded-full border-primary/20 text-foreground hover:bg-primary/5">
@@ -299,9 +299,9 @@ export default function DashboardPage() {
                 <Sparkles className="w-3 h-3" />
                 Tentang Kami
               </div>
-              <h2 className="text-3xl md:text-4xl font-serif font-bold text-foreground">Kisah Kedai Loman</h2>
+              <h2 className="text-3xl md:text-4xl font-serif font-bold text-foreground">Kisah e-Eatery</h2>
               <p className="text-muted-foreground leading-relaxed">
-                Berdiri sejak 2023, Kedai Loman hadir untuk membawa kehangatan cita rasa oriental klasik ke meja Anda. Dengan perpaduan rempah pilihan dan resep turun-temurun, kami menyajikan pengalaman kuliner Kopitiam modern yang tak terlupakan.
+                Berdiri sejak 2023, e-Eatery hadir untuk membawa kehangatan cita rasa oriental klasik ke meja Anda. Dengan perpaduan rempah pilihan dan resep turun-temurun, kami menyajikan pengalaman kuliner Kopitiam modern yang tak terlupakan.
               </p>
               <p className="text-muted-foreground leading-relaxed">
                 Kami percaya bahwa makanan yang baik (Good Food) akan membawa suasana hati yang baik pula (Good Mood). Nikmati setiap sajian kami bersama orang tercinta.
@@ -321,7 +321,7 @@ export default function DashboardPage() {
             <div className="flex-1 h-full min-h-[300px] md:min-h-[400px] w-full">
               <img 
                 src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=800" 
-                alt="Kedai Loman Interior" 
+                alt="e-Eatery Interior" 
                 className="w-full h-full object-cover"
               />
             </div>

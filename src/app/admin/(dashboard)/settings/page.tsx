@@ -9,7 +9,7 @@ export default function AdminSettingsPage() {
     <div className="space-y-6 max-w-4xl">
       <div>
         <h1 className="text-3xl font-serif font-bold text-foreground">Settings</h1>
-        <p className="text-muted-foreground">Konfigurasi sistem restoran Kedai Loman.</p>
+        <p className="text-muted-foreground">Konfigurasi sistem restoran e-Eatery.</p>
       </div>
 
       <Card className="border-none shadow-md bg-card">
@@ -22,7 +22,7 @@ export default function AdminSettingsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Restaurant Name</label>
-              <input type="text" defaultValue="Kedai Loman" className="w-full px-4 py-2 rounded-lg border border-border/50 bg-background focus:outline-none focus:ring-2 focus:ring-primary/20" />
+              <input type="text" defaultValue="e-Eatery" className="w-full px-4 py-2 rounded-lg border border-border/50 bg-background focus:outline-none focus:ring-2 focus:ring-primary/20" />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Phone Number</label>

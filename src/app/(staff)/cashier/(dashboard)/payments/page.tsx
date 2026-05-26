@@ -1,14 +1,16 @@
 "use client";
 
 import * as React from "react";
-import { useStaffStore } from "@/store/useStaffStore";
+import { useStaffStore, StaffOrder } from "@/store/useStaffStore";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Wallet, CreditCard, Banknote, CheckCircle, Smartphone } from "lucide-react";
+import { Wallet, CreditCard, Banknote, CheckCircle, Smartphone, Printer } from "lucide-react";
 import { toast } from "sonner";
+import { PrintableReceipt } from "@/components/staff/cashier/PrintableReceipt";
 
 export default function CashierPayments() {
-  const { orders, processPayment, completeOrder } = useStaffStore();
+  const { orders, processPayment, completeOrder, staffData } = useStaffStore();
+  const [printingOrder, setPrintingOrder] = React.useState<StaffOrder | null>(null);
   
   // Only show orders that are unpaid or just paid but not completed
   const unpaidOrders = orders.filter(o => o.paymentStatus === 'unpaid' && o.status !== 'cancelled');
@@ -22,6 +24,13 @@ export default function CashierPayments() {
   const handleComplete = (id: string) => {
     completeOrder(id);
     toast.success(`Order ${id} completed`);
+  };
+
+  const handlePrint = (order: StaffOrder) => {
+    setPrintingOrder(order);
+    setTimeout(() => {
+      window.print();
+    }, 100);
   };
 
   return (
@@ -88,9 +97,14 @@ export default function CashierPayments() {
                   </div>
                 </div>
                 
-                <Button className="w-full bg-green-600 hover:bg-green-700 text-white mt-2" onClick={() => handleComplete(order.id)}>
-                  Complete Order & Free Table
-                </Button>
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  <Button variant="outline" className="flex items-center gap-2 border-primary/20 hover:bg-primary/5 text-primary" onClick={() => handlePrint(order)}>
+                    <Printer className="w-4 h-4" /> Print Bill
+                  </Button>
+                  <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={() => handleComplete(order.id)}>
+                    Complete Order
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -100,6 +114,11 @@ export default function CashierPayments() {
             </div>
           )}
         </div>
+      </div>
+      
+      {/* Hidden render for printing */}
+      <div className="hidden print:block">
+        {printingOrder && <PrintableReceipt order={printingOrder} cashierName={staffData?.name || "Cashier"} />}
       </div>
     </div>
   );

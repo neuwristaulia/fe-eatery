@@ -2,14 +2,14 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 const initialOrdersData = [
-  { id: "ORD-001", customer: "Budi Santoso", phone: "081234567890", address: "Jl. Mawar No. 12", date: "2023-10-27 14:30", items: [{name: "Kopi Loman Signature", qty: 2, price: 50000}, {name: "Kaya Toast", qty: 1, price: 35000}], total: "Rp 85.000", status: "ready", paymentStatus: "paid" },
+  { id: "ORD-001", customer: "Budi Santoso", phone: "081234567890", address: "Jl. Mawar No. 12", date: "2023-10-27 14:30", items: [{name: "Kopi e-Eatery Signature", qty: 2, price: 50000}, {name: "Kaya Toast", qty: 1, price: 35000}], total: "Rp 85.000", status: "ready", paymentStatus: "paid" },
   { id: "ORD-002", customer: "Siti Aminah", phone: "081298765432", address: "Dine-in (Table 4)", date: "2023-10-27 14:15", items: [{name: "Nasi Goreng Spesial", qty: 1, price: 45000}], total: "Rp 45.000", status: "created", paymentStatus: "pending" },
   { id: "ORD-003", customer: "Andi Wijaya", phone: "081345678901", address: "Jl. Melati No. 5", date: "2023-10-27 13:50", items: [{name: "Teh Tarik", qty: 3, price: 60000}, {name: "Roti Bakar", qty: 2, price: 50000}], total: "Rp 110.000", status: "completed", paymentStatus: "paid" },
   { id: "ORD-004", customer: "Dewi Lestari", phone: "085678901234", address: "Dine-in (Table 1)", date: "2023-10-27 13:20", items: [{name: "Mie Goreng Seafood", qty: 1, price: 55000}], total: "Rp 55.000", status: "confirmed", paymentStatus: "paid" },
 ];
 
 const initialMenuData = [
-  { id: "M01", name: "Kopi Loman Signature", category: "Signatures", price: "Rp 25.000", stock: 45, image: "https://images.unsplash.com/photo-1541167760496-1628856ab772?w=150" },
+  { id: "M01", name: "Kopi e-Eatery Signature", category: "Signatures", price: "Rp 25.000", stock: 45, image: "https://images.unsplash.com/photo-1541167760496-1628856ab772?w=150" },
   { id: "M02", name: "Kaya Toast Premium", category: "Toast", price: "Rp 35.000", stock: 20, image: "https://images.unsplash.com/photo-1525268771113-32d9e9021a97?w=150" },
   { id: "M03", name: "Nasi Goreng Spesial", category: "Rice", price: "Rp 45.000", stock: 30, image: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=150" },
   { id: "M04", name: "Teh Tarik Malaya", category: "Drinks", price: "Rp 20.000", stock: 50, image: "https://images.unsplash.com/photo-1626804475297-4160aeea1a52?w=150" },
@@ -88,6 +88,7 @@ interface AdminState {
   addTable: (table: Table) => void;
   updateTable: (id: string, table: Table) => void;
   deleteTable: (id: string) => void;
+  reduceMenuStock: (items: {name: string, qty: number}[]) => void;
 }
 
 const initialStaffData: Staff[] = [
@@ -123,7 +124,7 @@ export const useAdminStore = create<AdminState>()(
         // Dummy authentication
         return new Promise((resolve) => {
           setTimeout(() => {
-            if (adminId === "ADM001" && password === "admin123") {
+            if (adminId.toUpperCase() === "ADM001" && password === "admin123") {
               set({ isAdminAuthenticated: true, adminData: { id: "ADM001", name: "Admin Utama", role: "Super Admin" } });
               resolve(true);
             } else {
@@ -238,10 +239,25 @@ export const useAdminStore = create<AdminState>()(
       deleteTable: (id) => set((state) => ({
         tables: state.tables.filter(t => t.id !== id)
       })),
+      reduceMenuStock: (items) => set((state) => {
+        const updatedMenus = state.menus.map(menu => {
+          const orderedItem = items.find(i => i.name.toLowerCase() === menu.name.toLowerCase());
+          if (orderedItem) {
+            return {
+              ...menu,
+              stock: Math.max(0, menu.stock - orderedItem.qty)
+            };
+          }
+          return menu;
+        });
+        return { menus: updatedMenus };
+      }),
     }),
     {
       name: "admin-storage",
       partialize: (state) => ({ 
+        isAdminAuthenticated: state.isAdminAuthenticated,
+        adminData: state.adminData,
         orders: state.orders, 
         menus: state.menus, 
         categories: state.categories, 

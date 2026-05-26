@@ -19,23 +19,23 @@ export function AnalyticsCard({ title, value, icon: Icon, trend, description, ic
 
   return (
     <Card className="bg-card border-border/50 shadow-sm relative overflow-hidden group">
-      <CardContent className="p-6">
-        <div className="flex justify-between items-start">
-          <div className="space-y-2 z-10 relative">
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-3xl font-bold tracking-tight">{value}</p>
+      <CardContent className="p-4 md:p-5">
+        <div className="flex justify-between items-start gap-2">
+          <div className="space-y-1.5 z-10 relative flex-1 min-w-0">
+            <p className="text-xs md:text-sm font-medium text-muted-foreground truncate">{title}</p>
+            <p className="text-xl md:text-2xl font-bold tracking-tight truncate">{value}</p>
             
             {trend !== undefined && (
-              <div className="flex items-center gap-2 mt-2">
-                <span className={`text-sm font-semibold px-2 py-0.5 rounded-full ${isPositive ? 'bg-green-500/10 text-green-500' : isNegative ? 'bg-red-500/10 text-red-500' : 'bg-gray-500/10 text-gray-500'}`}>
+              <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                <span className={`text-[10px] sm:text-xs font-semibold px-1.5 py-0.5 rounded-full ${isPositive ? 'bg-green-500/10 text-green-500' : isNegative ? 'bg-red-500/10 text-red-500' : 'bg-gray-500/10 text-gray-500'}`}>
                   {isPositive ? '+' : ''}{trend}%
                 </span>
-                <span className="text-xs text-muted-foreground">{description || "vs last month"}</span>
+                <span className="text-[10px] text-muted-foreground hidden sm:inline-block truncate">{description || "vs last month"}</span>
               </div>
             )}
           </div>
-          <div className={`w-12 h-12 rounded-2xl ${iconBgClass} flex items-center justify-center ${iconColorClass} z-10 relative group-hover:scale-110 transition-transform duration-300`}>
-            <Icon className="w-6 h-6" />
+          <div className={`w-10 h-10 shrink-0 rounded-xl ${iconBgClass} flex items-center justify-center ${iconColorClass} z-10 relative group-hover:scale-110 transition-transform duration-300`}>
+            <Icon className="w-5 h-5" />
           </div>
         </div>
         

@@ -52,7 +52,7 @@ export function Sidebar({ collapsed, setCollapsed }: { collapsed: boolean, setCo
             <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center p-1 overflow-hidden">
               <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" onError={(e) => { e.currentTarget.style.display="none" }} />
             </div>
-            <span className="font-serif font-bold text-xl whitespace-nowrap">Kedai Loman</span>
+            <span className="font-serif font-bold text-xl whitespace-nowrap">e-Eatery</span>
           </div>
         )}
         {collapsed && (

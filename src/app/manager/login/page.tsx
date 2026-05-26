@@ -49,7 +49,7 @@ export default function ManagerLoginPage() {
           <CardContent className="p-8">
             <div className="text-center mb-8">
               <div className="inline-flex items-center justify-center w-20 h-20 bg-primary/10 rounded-full mb-4 relative overflow-hidden">
-                <img src="/logo.png" alt="Kedai Loman Logo" className="w-14 h-14 object-contain" onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.nextElementSibling?.classList.remove("hidden"); }} />
+                <img src="/logo.png" alt="e-Eatery Logo" className="w-14 h-14 object-contain" onError={(e) => { e.currentTarget.style.display = "none"; e.currentTarget.nextElementSibling?.classList.remove("hidden"); }} />
                 <span className="hidden font-serif font-bold text-2xl text-primary">KL</span>
               </div>
               <h1 className="text-3xl font-serif font-bold text-foreground">Manager Portal</h1>

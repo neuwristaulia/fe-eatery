@@ -16,7 +16,7 @@ export function Footer() {
           <div className="space-y-4">
             <Link href="/dashboard" className="inline-block">
               <div className="w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden shadow-lg border border-white/10 hover:scale-105 transition-transform">
-                <img src="/logo.png" alt="Kedai Loman Logo" className="w-full h-full object-cover" />
+                <img src="/logo.png" alt="e-Eatery Logo" className="w-full h-full object-cover" />
               </div>
             </Link>
             <p className="text-secondary-foreground/80 mt-4 leading-relaxed max-w-xs text-sm">
@@ -67,7 +67,7 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="w-5 h-5 text-accent shrink-0" />
-                <span>hello@kedailoman.com</span>
+                <span>hello@eeatery.com</span>
               </li>
             </ul>
           </div>
@@ -94,7 +94,7 @@ export function Footer() {
 
         <div className="pt-8 border-t border-white/10 text-center md:flex justify-between items-center">
           <p className="text-sm text-secondary-foreground/60">
-            &copy; {new Date().getFullYear()} Kedai Loman. All rights reserved.
+            &copy; {new Date().getFullYear()} e-Eatery. All rights reserved.
           </p>
           <div className="flex justify-center gap-6 mt-4 md:mt-0 text-sm text-secondary-foreground/60">
             <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>

@@ -58,7 +58,7 @@ export default function OrderMonitoringPage() {
             <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
           </div>
           <Button 
-            variant={showStatusFilters ? "default" : "outline"} 
+            variant={showStatusFilters ? "primary" : "outline"} 
             className={`gap-2 ${showStatusFilters ? "bg-primary text-primary-foreground" : "bg-card border-border/50"}`}
             onClick={() => setShowStatusFilters(!showStatusFilters)}
           >
@@ -72,7 +72,7 @@ export default function OrderMonitoringPage() {
           {["All", "Dine In", "Take Away", "Pickup"].map(f => (
             <Button 
               key={f} 
-              variant={typeFilter === f ? "default" : "outline"}
+              variant={typeFilter === f ? "primary" : "outline"}
               className={typeFilter === f ? "bg-primary text-primary-foreground" : "bg-card border-border/50"}
               onClick={() => setTypeFilter(f)}
             >
@@ -88,7 +88,7 @@ export default function OrderMonitoringPage() {
               <Button 
                 key={f} 
                 size="sm"
-                variant={statusFilter === f ? "default" : "outline"}
+                variant={statusFilter === f ? "primary" : "outline"}
                 className={statusFilter === f ? "bg-secondary text-secondary-foreground" : "bg-card border-border/50"}
                 onClick={() => setStatusFilter(f)}
               >

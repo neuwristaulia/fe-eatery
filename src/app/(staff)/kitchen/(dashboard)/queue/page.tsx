@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useStaffStore } from "@/store/useStaffStore";
+import { useAdminStore } from "@/store/useAdminStore";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Flame, CheckCircle, Clock, AlertTriangle, ChefHat } from "lucide-react";
@@ -9,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function KitchenQueue() {
   const { orders, startPreparing, markReady } = useStaffStore();
+  const { menus } = useAdminStore();
 
   const queueOrders = orders.filter(o => o.status === 'confirmed' || o.status === 'preparing')
     .sort((a, b) => {
@@ -30,74 +32,90 @@ export default function KitchenQueue() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <AnimatePresence>
-          {queueOrders.map(order => (
-            <motion.div
-              key={order.id}
-              layout
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-            >
-              <Card className={`bg-card border-2 shadow-sm h-full flex flex-col ${order.status === 'preparing' ? 'border-orange-500/50' : 'border-blue-500/30'}`}>
-                <div className={`p-3 font-bold text-lg flex justify-between items-center ${order.status === 'preparing' ? 'bg-orange-500/10 text-orange-600' : 'bg-blue-500/10 text-blue-600'}`}>
-                  <span>{order.id}</span>
-                  <span className="flex items-center gap-1 text-sm"><Clock className="w-4 h-4" /> {order.time}</span>
-                </div>
-                
-                <CardContent className="p-5 flex-1 flex flex-col">
-                  <div className="flex justify-between items-start mb-4 pb-4 border-b border-border/50">
-                    <div>
-                      <p className="text-muted-foreground text-sm">Customer</p>
-                      <p className="font-bold text-lg">{order.customerName}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-muted-foreground text-sm">{order.type.toUpperCase()}</p>
-                      <p className="font-bold text-xl">{order.tableNumber || '-'}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4 mb-6 flex-1">
-                    {order.items.map((item, i) => (
-                      <div key={i} className="flex gap-3 text-lg">
-                        <div className="font-bold text-orange-600 bg-orange-500/10 px-2 py-1 rounded h-fit">
-                          {item.qty}x
-                        </div>
-                        <div>
-                          <p className="font-bold">{item.name}</p>
-                          {item.notes && (
-                            <p className="text-sm text-yellow-600 mt-1 flex items-start gap-1">
-                              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" /> {item.notes}
-                            </p>
-                          )}
-                        </div>
+      <div className="bg-card border border-border/50 rounded-xl shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead className="text-sm text-muted-foreground uppercase bg-secondary/30 border-b border-border/50">
+              <tr>
+                <th className="px-6 py-4 font-bold">Ticket & Time</th>
+                <th className="px-6 py-4 font-bold">Customer & Type</th>
+                <th className="px-6 py-4 font-bold min-w-[300px]">Order Items</th>
+                <th className="px-6 py-4 font-bold text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <AnimatePresence>
+                {queueOrders.map(order => (
+                  <motion.tr
+                    key={order.id}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className={`border-b border-border/50 transition-colors ${order.status === 'preparing' ? 'bg-orange-500/5' : 'bg-blue-500/5'}`}
+                  >
+                    <td className="px-6 py-4 align-top">
+                      <div className={`font-bold text-lg ${order.status === 'preparing' ? 'text-orange-600' : 'text-blue-600'}`}>{order.id}</div>
+                      <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground mt-1">
+                        <Clock className="w-4 h-4" /> {order.time}
                       </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-auto pt-4 border-t border-border/50">
-                    {order.status === 'confirmed' ? (
-                      <Button 
-                        className="w-full h-14 text-lg font-bold bg-red-600 hover:bg-red-700 text-white" 
-                        onClick={() => startPreparing(order.id)}
-                      >
-                        <Flame className="w-5 h-5 mr-2" /> Start Cooking
-                      </Button>
-                    ) : (
-                      <Button 
-                        className="w-full h-14 text-lg font-bold bg-red-600 hover:bg-red-700 text-white animate-pulse hover:animate-none" 
-                        onClick={() => markReady(order.id)}
-                      >
-                        <CheckCircle className="w-5 h-5 mr-2" /> Mark as Ready
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </AnimatePresence>
+                    </td>
+                    <td className="px-6 py-4 align-top">
+                      <div className="font-bold text-lg">{order.customerName}</div>
+                      <div className="text-sm font-bold text-muted-foreground mt-1">
+                        {order.type.toUpperCase()} {order.tableNumber ? `(T-${order.tableNumber})` : ''}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 align-top">
+                      <div className="space-y-3">
+                        {order.items.map((item, i) => {
+                          const menuItem = menus.find(m => m.name.toLowerCase() === item.name.toLowerCase());
+                          return (
+                          <div key={i} className="flex gap-3 text-lg">
+                            <div className="font-bold text-orange-600 bg-orange-500/10 px-2 py-0.5 rounded h-fit">
+                              {item.qty}x
+                            </div>
+                            <div>
+                              <p className="font-bold">{item.name}</p>
+                              {item.notes && (
+                                <p className="text-sm text-yellow-600 mt-1 flex items-start gap-1">
+                                  <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" /> {item.notes}
+                                </p>
+                              )}
+                              {menuItem && (
+                                <div className={`text-xs mt-1 font-bold px-2 py-0.5 rounded w-fit ${menuItem.stock === 0 ? 'bg-red-500/10 text-red-600' : menuItem.stock < 10 ? 'bg-yellow-500/10 text-yellow-600' : 'bg-green-500/10 text-green-600'}`}>
+                                  {menuItem.stock} in stock
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )})}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 align-top text-right">
+                      {order.status === 'confirmed' ? (
+                        <Button 
+                          size="lg"
+                          className="font-bold bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto" 
+                          onClick={() => startPreparing(order.id)}
+                        >
+                          <Flame className="w-5 h-5 mr-2" /> Start Cooking
+                        </Button>
+                      ) : (
+                        <Button 
+                          size="lg"
+                          className="font-bold bg-red-600 hover:bg-red-700 text-white animate-pulse hover:animate-none w-full sm:w-auto" 
+                          onClick={() => markReady(order.id)}
+                        >
+                          <CheckCircle className="w-5 h-5 mr-2" /> Mark as Ready
+                        </Button>
+                      )}
+                    </td>
+                  </motion.tr>
+                ))}
+              </AnimatePresence>
+            </tbody>
+          </table>
+        </div>
       </div>
       
       {queueOrders.length === 0 && (

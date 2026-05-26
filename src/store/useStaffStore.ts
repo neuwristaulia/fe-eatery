@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { useAdminStore } from "./useAdminStore";
 
 export type OrderStatus = 'created' | 'confirmed' | 'preparing' | 'ready' | 'served' | 'completed' | 'cancelled';
 export type PaymentStatus = 'unpaid' | 'paid' | 'failed';
@@ -26,6 +27,7 @@ export interface StaffOrder {
   status: OrderStatus;
   paymentStatus: PaymentStatus;
   paymentMethod?: string;
+  stockReduced?: boolean;
 }
 
 export interface CafeTable {
@@ -70,7 +72,7 @@ const initialOrders: StaffOrder[] = [
     tableNumber: "T-02",
     time: "10:15",
     items: [
-      { name: "Kopi Loman Signature", qty: 2, price: 25000, notes: "Kurang manis" },
+      { name: "Kopi e-Eatery Signature", qty: 2, price: 25000, notes: "Kurang manis" },
       { name: "Kaya Toast Premium", qty: 1, price: 35000 }
     ],
     subtotal: 85000,
@@ -203,13 +205,29 @@ export const useStaffStore = create<StaffState>()(
         orders: state.orders.map(o => o.id === id ? { ...o, status: 'confirmed' } : o)
       })),
       
-      startPreparing: (id) => set((state) => ({
-        orders: state.orders.map(o => o.id === id ? { ...o, status: 'preparing' } : o)
-      })),
+      startPreparing: (id) => {
+        set((state) => {
+          let updatedOrders = state.orders.map(o => o.id === id ? { ...o, status: 'preparing' as OrderStatus } : o);
+          const order = updatedOrders.find(o => o.id === id);
+          if (order && order.paymentStatus === 'paid' && !order.stockReduced) {
+            useAdminStore.getState().reduceMenuStock(order.items);
+            updatedOrders = updatedOrders.map(o => o.id === id ? { ...o, stockReduced: true } : o);
+          }
+          return { orders: updatedOrders };
+        });
+      },
       
-      markReady: (id) => set((state) => ({
-        orders: state.orders.map(o => o.id === id ? { ...o, status: 'ready' } : o)
-      })),
+      markReady: (id) => {
+        set((state) => {
+          let updatedOrders = state.orders.map(o => o.id === id ? { ...o, status: 'ready' as OrderStatus } : o);
+          const order = updatedOrders.find(o => o.id === id);
+          if (order && order.paymentStatus === 'paid' && !order.stockReduced) {
+            useAdminStore.getState().reduceMenuStock(order.items);
+            updatedOrders = updatedOrders.map(o => o.id === id ? { ...o, stockReduced: true } : o);
+          }
+          return { orders: updatedOrders };
+        });
+      },
       
       serveOrder: (id) => set((state) => ({
         orders: state.orders.map(o => o.id === id ? { ...o, status: 'served' } : o)
@@ -244,9 +262,18 @@ export const useStaffStore = create<StaffState>()(
         return { orders: updatedOrders, tables: updatedTables };
       }),
       
-      processPayment: (id, method) => set((state) => ({
-        orders: state.orders.map(o => o.id === id ? { ...o, paymentStatus: 'paid', paymentMethod: method } : o)
-      })),
+      processPayment: (id, method) => {
+        set((state) => {
+          let updatedOrders = state.orders.map(o => o.id === id ? { ...o, paymentStatus: 'paid' as PaymentStatus, paymentMethod: method } : o);
+          const order = updatedOrders.find(o => o.id === id);
+          const kitchenProcessed = ['preparing', 'ready', 'served', 'completed'].includes(order?.status || '');
+          if (order && kitchenProcessed && !order.stockReduced) {
+            useAdminStore.getState().reduceMenuStock(order.items);
+            updatedOrders = updatedOrders.map(o => o.id === id ? { ...o, stockReduced: true } : o);
+          }
+          return { orders: updatedOrders };
+        });
+      },
       
       updateTableStatus: (id, status, orderId) => set((state) => ({
         tables: state.tables.map(t => t.id === id ? { ...t, status, currentOrderId: orderId } : t)

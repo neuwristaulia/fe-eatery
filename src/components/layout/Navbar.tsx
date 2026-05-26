@@ -46,7 +46,7 @@ export function Navbar() {
             {/* Logo */}
             <Link href="/dashboard" className="flex items-center group">
               <div className="w-14 h-14 md:w-16 md:h-16 rounded-full overflow-hidden shadow-md group-hover:scale-105 transition-transform border-2 border-transparent group-hover:border-primary/20">
-                <img src="/logo.png" alt="Kedai Loman Logo" className="w-full h-full object-cover" />
+                <img src="/logo.png" alt="e-Eatery Logo" className="w-full h-full object-cover" />
               </div>
             </Link>
 

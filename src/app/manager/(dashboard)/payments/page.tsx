@@ -14,7 +14,7 @@ const mockTransactions: TransactionDetail[] = [
   { 
     id: "PAY-901", orderId: "ORD-120", customerName: "Ahmad", orderType: "Dine In", paymentMethod: "QRIS", amount: 120000, status: "Success", date: "2026-05-24 19:35",
     tableNumber: "T-05", subtotal: 109091, tax: 10909, loyaltyPointsEarned: 120,
-    items: [{ id: "i1", name: "Kopi Loman Signature", quantity: 2, price: 30000 }, { id: "i2", name: "Kaya Toast", quantity: 1, price: 60000 }],
+    items: [{ id: "i1", name: "Kopi e-Eatery Signature", quantity: 2, price: 30000 }, { id: "i2", name: "Kaya Toast", quantity: 1, price: 60000 }],
     timeline: [
       { status: "Pending", timestamp: "2026-05-24 19:30", note: "Order placed" },
       { status: "Success", timestamp: "2026-05-24 19:35", note: "QRIS payment confirmed" }
@@ -127,7 +127,7 @@ export default function PaymentMonitoringPage() {
           </h1>
           <p className="text-muted-foreground mt-1">Advanced analytics and tracking for all cafe transactions.</p>
         </div>
-        <ExportButton data={filteredTransactions} filename="loman_transactions" />
+        <ExportButton data={filteredTransactions} filename="eeatery_transactions" />
       </div>
 
       {/* Analytics Summary */}
@@ -173,7 +173,7 @@ export default function PaymentMonitoringPage() {
       <TransactionTable 
         data={filteredTransactions} 
         isLoading={isLoading} 
-        onViewDetail={setSelectedTx} 
+        onViewDetail={(tx) => setSelectedTx(tx as any)} 
       />
 
       {/* View Detail Modal */}

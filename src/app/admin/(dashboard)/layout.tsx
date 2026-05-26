@@ -15,11 +15,17 @@ export default function AdminDashboardLayout({ children }: { children: React.Rea
   useEffect(() => {
     setIsMounted(true);
     if (!isAdminAuthenticated) {
-      router.push("/admin/login");
+      window.location.href = "/admin/login";
     }
-  }, [isAdminAuthenticated, router]);
+  }, [isAdminAuthenticated]);
 
-  if (!isMounted || !isAdminAuthenticated) return null;
+  if (!isMounted || !isAdminAuthenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-background">
