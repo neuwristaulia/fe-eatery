@@ -18,7 +18,8 @@ import {
   TicketPercent, 
   BarChart3, 
   Settings,
-  ChevronLeft
+  ChevronLeft,
+  CalendarDays
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +33,7 @@ const menuItems = [
   { icon: Users, label: "Customers", href: "/admin/customers" },
   { icon: UserSquare2, label: "Staff", href: "/admin/staff" },
   { icon: Armchair, label: "Cafe Tables", href: "/admin/tables" },
+  { icon: CalendarDays, label: "Reservations", href: "/admin/reservations" },
   { icon: Gift, label: "Rewards", href: "/admin/rewards" },
   { icon: TicketPercent, label: "Vouchers", href: "/admin/vouchers" },
   { icon: Settings, label: "Settings", href: "/admin/settings" },

@@ -55,6 +55,18 @@ interface Table {
   orderId?: string;
 }
 
+interface Reservation {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  table: string;
+  capacity: number;
+  date: string;
+  time: string;
+  status: string;
+}
+
 interface AdminState {
   isAdminAuthenticated: boolean;
   adminData: any | null;
@@ -65,6 +77,7 @@ interface AdminState {
   customers: any[];
   staff: Staff[];
   tables: Table[];
+  reservations: Reservation[];
   login: (adminId: string, password: string) => Promise<boolean>;
   logout: () => void;
   addOrder: (order: any) => void;
@@ -81,6 +94,8 @@ interface AdminState {
   updateStock: (id: string, stock: any) => void;
   deleteStock: (id: string) => void;
   addCustomer: (customer: any) => void;
+  updateCustomer: (id: string, customer: any) => void;
+  deleteCustomer: (id: string) => void;
   updateCustomerPoints: (id: string, points: number) => void;
   addStaff: (staff: Staff) => void;
   updateStaff: (id: string, staff: Staff) => void;
@@ -89,6 +104,9 @@ interface AdminState {
   updateTable: (id: string, table: Table) => void;
   deleteTable: (id: string) => void;
   reduceMenuStock: (items: {name: string, qty: number}[]) => void;
+  addReservation: (reservation: Reservation) => void;
+  updateReservation: (id: string, reservation: Reservation) => void;
+  deleteReservation: (id: string) => void;
 }
 
 const initialStaffData: Staff[] = [
@@ -108,6 +126,10 @@ const initialTablesData: Table[] = [
   { id: "T-08", name: "Table 8", capacity: 4, status: "Reserved", time: "19:30" },
 ];
 
+const initialReservationsData: Reservation[] = [
+  { id: "RES-01", name: "Alex", phone: "081223344556", email: "alex@example.com", table: "Table 3", capacity: 4, date: "2023-11-05", time: "18:00", status: "Confirmed" }
+];
+
 export const useAdminStore = create<AdminState>()(
   persist(
     (set) => ({
@@ -120,6 +142,7 @@ export const useAdminStore = create<AdminState>()(
       customers: initialCustomersData,
       staff: initialStaffData,
       tables: initialTablesData,
+      reservations: initialReservationsData,
       login: async (adminId, password) => {
         // Dummy authentication
         return new Promise((resolve) => {
@@ -212,6 +235,12 @@ export const useAdminStore = create<AdminState>()(
         stocks: state.stocks.filter(s => s.id !== id)
       })),
       addCustomer: (customer) => set((state) => ({ customers: [customer, ...state.customers] })),
+      updateCustomer: (id, customer) => set((state) => ({
+        customers: state.customers.map(c => c.id === id ? { ...c, ...customer } : c)
+      })),
+      deleteCustomer: (id) => set((state) => ({
+        customers: state.customers.filter(c => c.id !== id)
+      })),
       updateCustomerPoints: (id, points) => set((state) => ({
         customers: state.customers.map(c => {
           if (c.id === id) {
@@ -239,6 +268,13 @@ export const useAdminStore = create<AdminState>()(
       deleteTable: (id) => set((state) => ({
         tables: state.tables.filter(t => t.id !== id)
       })),
+      addReservation: (reservation) => set((state) => ({ reservations: [reservation, ...state.reservations] })),
+      updateReservation: (id, reservation) => set((state) => ({
+        reservations: state.reservations.map(r => r.id === id ? reservation : r)
+      })),
+      deleteReservation: (id) => set((state) => ({
+        reservations: state.reservations.filter(r => r.id !== id)
+      })),
       reduceMenuStock: (items) => set((state) => {
         const updatedMenus = state.menus.map(menu => {
           const orderedItem = items.find(i => i.name.toLowerCase() === menu.name.toLowerCase());
@@ -264,7 +300,8 @@ export const useAdminStore = create<AdminState>()(
         stocks: state.stocks,
         customers: state.customers,
         staff: state.staff,
-        tables: state.tables
+        tables: state.tables,
+        reservations: state.reservations
       }),
     }
   )

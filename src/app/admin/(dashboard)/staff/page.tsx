@@ -67,6 +67,12 @@ export default function AdminStaffPage() {
     setIsModalOpen(false);
   };
 
+  const handleDeleteStaff = (id: string) => {
+    if (confirm("Are you sure you want to delete this staff member?")) {
+      deleteStaff(id);
+    }
+  };
+
   return (
     <div className="space-y-6 relative">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -108,7 +114,7 @@ export default function AdminStaffPage() {
                 </div>
               </div>
               <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => deleteStaff(s.id)} className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-full transition-colors">
+                <button onClick={() => handleDeleteStaff(s.id)} className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-full transition-colors">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
