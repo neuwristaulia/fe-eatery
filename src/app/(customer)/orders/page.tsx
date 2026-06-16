@@ -2,17 +2,65 @@
 
 import * as React from "react";
 import { motion } from "framer-motion";
-import { recentOrders } from "@/lib/dummy-data";
+import { useCustomerOrders } from "@/hooks/useCustomerOrders";
+import { useAuthStore } from "@/store/useAuthStore";
 import { Card, CardContent } from "@/components/ui/Card";
-import { ReceiptText, ChevronRight, Clock, ShoppingBag } from "lucide-react";
+import { ReceiptText, ChevronRight, Clock, ShoppingBag, Printer } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { useSession } from "next-auth/react";
+import { mapOrderToStaff } from "@/lib/api/mappers";
+import type { StaffOrder } from "@/store/useStaffStore";
+import { PrintableReceipt } from "@/components/staff/cashier/PrintableReceipt";
+import { ordersApi } from "@/lib/api";
+import { toast } from "sonner";
 
 export default function OrdersPage() {
   const { status } = useSession();
   const isGuest = status === "unauthenticated";
+  const isBackendCustomer = useAuthStore(
+    (s) => Boolean(s.accessToken && s.portal === "customer"),
+  );
+  const authUser = useAuthStore((s) => s.user);
+  const { orders: recentOrders, rawOrders, loading, reload } = useCustomerOrders();
+  const [printingOrder, setPrintingOrder] = React.useState<StaffOrder | null>(null);
+  const [pendingGuestIds, setPendingGuestIds] = React.useState<number[]>([]);
+  const [claiming, setClaiming] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!isBackendCustomer) return;
+    try {
+      const stored = JSON.parse(localStorage.getItem("guest_order_ids") ?? "[]") as number[];
+      if (stored.length > 0) setPendingGuestIds(stored);
+    } catch {
+      // ignore
+    }
+  }, [isBackendCustomer]);
+
+  const handleClaimGuestOrders = async () => {
+    setClaiming(true);
+    try {
+      await ordersApi.claimGuestOrders(pendingGuestIds);
+      localStorage.removeItem("guest_order_ids");
+      setPendingGuestIds([]);
+      await reload();
+      toast.success(`${pendingGuestIds.length} guest order(s) added to your account!`);
+    } catch {
+      toast.error("Failed to claim guest orders. They may have already been claimed.");
+    } finally {
+      setClaiming(false);
+    }
+  };
+
+  const handlePrint = (orderId: string) => {
+    const rawOrder = rawOrders.find((o) => String(o.id) === orderId);
+    if (!rawOrder) return;
+    setPrintingOrder(mapOrderToStaff(rawOrder));
+    setTimeout(() => {
+      window.print();
+    }, 100);
+  };
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
@@ -29,11 +77,42 @@ export default function OrdersPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "completed": return "bg-green-500/10 text-green-500";
-      case "ready": return "bg-primary/10 text-primary";
+      case "preparing": return "bg-primary/10 text-primary";
       case "confirmed": return "bg-blue-500/10 text-blue-500";
+      case "order_placed": return "bg-blue-500/10 text-blue-500";
+      case "pending": return "bg-amber-500/10 text-amber-500";
+      case "cancelled": return "bg-red-500/10 text-red-500";
+      case "refunded": return "bg-red-500/10 text-red-500";
       default: return "bg-muted text-muted-foreground";
     }
   };
+
+  const getStatusLabel = (status: string) => {
+    if (status === "pending") return "Awaiting Payment";
+    return status.replace("_", " ");
+  };
+
+  if (!isBackendCustomer && isGuest) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[80vh] p-6 text-center">
+        <h2 className="text-2xl font-bold mb-3">Login Diperlukan</h2>
+        <p className="text-muted-foreground mb-6">
+          Masuk dengan email customer untuk melihat riwayat pesanan dari backend.
+        </p>
+        <Link href="/login">
+          <Button size="lg" className="rounded-2xl">Login</Button>
+        </Link>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (recentOrders.length === 0) {
     return (
@@ -64,7 +143,29 @@ export default function OrdersPage() {
     <div className="flex flex-col min-h-screen pb-24 p-4 md:p-8 max-w-5xl mx-auto w-full">
       <h1 className="text-2xl font-bold mb-6">Your Orders</h1>
 
-      {isGuest && (
+      {isBackendCustomer && pendingGuestIds.length > 0 && (
+        <Card className="mb-6 bg-amber-500/10 border-amber-500/30">
+          <CardContent className="p-4 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div>
+              <h3 className="font-bold text-amber-700 dark:text-amber-400">Guest Orders Found</h3>
+              <p className="text-sm text-muted-foreground">
+                You placed {pendingGuestIds.length} order{pendingGuestIds.length > 1 ? "s" : ""} as a guest. Add {pendingGuestIds.length > 1 ? "them" : "it"} to your account?
+              </p>
+            </div>
+            <Button
+              size="sm"
+              className="whitespace-nowrap rounded-full"
+              disabled={claiming}
+              isLoading={claiming}
+              onClick={handleClaimGuestOrders}
+            >
+              Claim Orders
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {!isBackendCustomer && (
         <Card className="mb-6 bg-primary/10 border-primary/20">
           <CardContent className="p-4 flex flex-col md:flex-row items-center justify-between gap-4">
             <div>
@@ -102,7 +203,7 @@ export default function OrdersPage() {
                       </div>
                     </div>
                     <div className={cn("px-2 py-1 rounded-full text-[10px] font-bold uppercase", getStatusColor(order.status))}>
-                      {order.status}
+                      {getStatusLabel(order.status)}
                     </div>
                   </div>
                   
@@ -115,12 +216,40 @@ export default function OrdersPage() {
                       <ChevronRight className="w-4 h-4 text-muted-foreground" />
                     </div>
                   </div>
+
+                  {order.status === "completed" && (
+                    <div className="mt-3 pt-3 border-t border-border/50">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full rounded-xl gap-2"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handlePrint(order.id);
+                        }}
+                      >
+                        <Printer className="w-4 h-4" />
+                        Print Bill
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </Link>
           </motion.div>
         ))}
       </motion.div>
+
+      {/* Hidden render for printing */}
+      <div className="hidden print:block">
+        {printingOrder && (
+          <PrintableReceipt
+            order={printingOrder}
+            cashierName={authUser?.name || "Customer"}
+          />
+        )}
+      </div>
     </div>
   );
 }

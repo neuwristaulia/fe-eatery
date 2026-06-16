@@ -1,57 +1,101 @@
 "use client";
 
 import * as React from "react";
-import { PackageSearch, AlertTriangle, PackageOpen, Box } from "lucide-react";
+import { PackageSearch, AlertTriangle, PackageOpen, Box, Download, FileSpreadsheet } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { AnalyticsCard } from "@/components/ui/AnalyticsCard";
+import { Button } from "@/components/ui/Button";
 import { StockFilters } from "@/components/manager/stock/StockFilters";
 import { StockTable } from "@/components/manager/stock/StockTable";
 import { ExportStockButton } from "@/components/manager/stock/ExportStockButton";
 import { StockItem } from "@/types/stock";
+import { stocksApi, type ApiStock } from "@/lib/api";
+import { exportToPdf, exportToExcel, type ExportColumn, type ExportRow } from "@/lib/export";
 
-const mockStock: StockItem[] = [
-  { id: "STK-001", name: "Espresso Beans", category: "Ingredients", quantity: "2.5 kg", status: "Low", lastUpdated: "Today, 08:00 AM" },
-  { id: "STK-002", name: "Milk (Fresh)", category: "Ingredients", quantity: "15 liters", status: "Good", lastUpdated: "Today, 08:00 AM" },
-  { id: "STK-003", name: "Takeaway Cups (M)", category: "Packaging", quantity: "50 pcs", status: "Low", lastUpdated: "Yesterday, 22:00 PM" },
-  { id: "STK-004", name: "Matcha Powder", category: "Ingredients", quantity: "1.2 kg", status: "Good", lastUpdated: "2 Days ago" },
-  { id: "STK-005", name: "Napkins", category: "Supplies", quantity: "500 pcs", status: "Good", lastUpdated: "Yesterday, 22:00 PM" },
-  { id: "STK-006", name: "Vanilla Syrup", category: "Ingredients", quantity: "0 ml", status: "Out of Stock", lastUpdated: "Today, 10:30 AM" },
-  { id: "STK-007", name: "Iced Tea Mix", category: "Beverages", quantity: "5 kg", status: "Good", lastUpdated: "1 Week ago" },
-];
+function toStockItem(stock: ApiStock): StockItem {
+  let status: StockItem["status"] = "Good";
+  if (stock.quantity <= 0) {
+    status = "Out of Stock";
+  } else if (stock.min_stock != null && stock.quantity <= stock.min_stock) {
+    status = "Low";
+  }
+
+  return {
+    id: `STK-${stock.id}`,
+    name: stock.menu?.name || `Menu #${stock.menu_id}`,
+    category: stock.menu?.category?.name || "-",
+    quantity: String(stock.quantity),
+    status,
+    lastUpdated: stock.updated_at ? new Date(stock.updated_at).toLocaleString("id-ID") : "-",
+  };
+}
 
 export default function StockMonitoringPage() {
+  const [stockItems, setStockItems] = React.useState<StockItem[]>([]);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [categoryFilter, setCategoryFilter] = React.useState("All");
   const [statusFilter, setStatusFilter] = React.useState("All");
   const [isLoading, setIsLoading] = React.useState(true);
 
-  // Simulate network request
   React.useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 800);
-    return () => clearTimeout(timer);
+    let mounted = true;
+    stocksApi
+      .listStocks()
+      .then((data) => {
+        if (mounted) setStockItems(data.map(toStockItem));
+      })
+      .finally(() => {
+        if (mounted) setIsLoading(false);
+      });
+    return () => {
+      mounted = false;
+    };
   }, []);
 
+  const categoryOptions = React.useMemo(
+    () => Array.from(new Set(stockItems.map((item) => item.category))),
+    [stockItems],
+  );
+
   const filteredStock = React.useMemo(() => {
-    return mockStock.filter(item => {
-      const matchSearch = 
-        item.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    return stockItems.filter(item => {
+      const matchSearch =
+        item.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.name.toLowerCase().includes(searchTerm.toLowerCase());
-      
+
       const matchCategory = categoryFilter === "All" || item.category === categoryFilter;
       const matchStatus = statusFilter === "All" || item.status === statusFilter;
 
       return matchSearch && matchCategory && matchStatus;
     });
-  }, [searchTerm, categoryFilter, statusFilter]);
+  }, [stockItems, searchTerm, categoryFilter, statusFilter]);
 
   // Analytics
   const totalItems = filteredStock.length;
   const criticalItemsCount = filteredStock.filter(s => s.status === "Low" || s.status === "Out of Stock").length;
   const goodStatusCount = filteredStock.filter(s => s.status === "Good").length;
 
+  const exportColumns: ExportColumn[] = [
+    { header: "Item Code", key: "id" },
+    { header: "Name", key: "name" },
+    { header: "Category", key: "category" },
+    { header: "Quantity", key: "quantity" },
+    { header: "Status", key: "status" },
+    { header: "Last Updated", key: "lastUpdated" },
+  ];
+
+  const exportRows: ExportRow[] = filteredStock.map((item) => ({
+    id: item.id,
+    name: item.name,
+    category: item.category,
+    quantity: item.quantity,
+    status: item.status,
+    lastUpdated: item.lastUpdated,
+  }));
+
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto pb-10 relative">
-      
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -60,24 +104,40 @@ export default function StockMonitoringPage() {
           </h1>
           <p className="text-muted-foreground mt-1">Monitor inventory levels and identify low-stock items.</p>
         </div>
-        <ExportStockButton data={filteredStock} filename="eeatery_inventory" />
+        <div className="flex items-center gap-3">
+          <ExportStockButton data={filteredStock} filename="eeatery_inventory" />
+          <Button
+            variant="outline"
+            className="gap-2 bg-card border-border/50"
+            onClick={() => exportToPdf("Stock Monitoring Report", exportColumns, exportRows)}
+          >
+            <Download className="w-4 h-4" /> Export PDF
+          </Button>
+          <Button
+            variant="outline"
+            className="gap-2 bg-card border-border/50"
+            onClick={() => exportToExcel("Stock Monitoring Report", exportColumns, exportRows)}
+          >
+            <FileSpreadsheet className="w-4 h-4" /> Export Excel
+          </Button>
+        </div>
       </div>
 
       {/* Analytics Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <AnalyticsCard 
-          title="Total Monitored Items" 
-          value={totalItems} 
-          icon={Box} 
-          iconColorClass="text-blue-500" 
-          iconBgClass="bg-blue-500/10" 
+        <AnalyticsCard
+          title="Total Monitored Items"
+          value={totalItems}
+          icon={Box}
+          iconColorClass="text-blue-500"
+          iconBgClass="bg-blue-500/10"
         />
-        <AnalyticsCard 
-          title="In Good Condition" 
-          value={goodStatusCount} 
-          icon={PackageOpen} 
-          iconColorClass="text-green-500" 
-          iconBgClass="bg-green-500/10" 
+        <AnalyticsCard
+          title="In Good Condition"
+          value={goodStatusCount}
+          icon={PackageOpen}
+          iconColorClass="text-green-500"
+          iconBgClass="bg-green-500/10"
         />
         <Card className="bg-red-500/5 border-red-500/20 shadow-sm relative overflow-hidden group">
           <CardContent className="p-6 flex justify-between items-start">
@@ -95,16 +155,17 @@ export default function StockMonitoringPage() {
       </div>
 
       {/* Filters */}
-      <StockFilters 
+      <StockFilters
         searchTerm={searchTerm} setSearchTerm={setSearchTerm}
         categoryFilter={categoryFilter} setCategoryFilter={setCategoryFilter}
         statusFilter={statusFilter} setStatusFilter={setStatusFilter}
+        categoryOptions={categoryOptions}
       />
 
       {/* Data Table */}
-      <StockTable 
-        data={filteredStock} 
-        isLoading={isLoading} 
+      <StockTable
+        data={filteredStock}
+        isLoading={isLoading}
       />
 
     </div>

@@ -2,13 +2,11 @@
 
 import * as React from "react";
 import { useStaffStore } from "@/store/useStaffStore";
-import { useAdminStore } from "@/store/useAdminStore";
 import { Card, CardContent } from "@/components/ui/Card";
 import { CheckCircle, BellRing, ChevronRight } from "lucide-react";
 
 export default function KitchenReadyOrders() {
   const { orders } = useStaffStore();
-  const { menus } = useAdminStore();
 
   const readyOrders = orders.filter(o => o.status === 'ready');
 
@@ -34,21 +32,12 @@ export default function KitchenReadyOrders() {
               </div>
               
               <div className="p-6 flex-1 flex flex-col justify-center space-y-2">
-                {order.items.map((item, i) => {
-                  const menuItem = menus.find(m => m.name.toLowerCase() === item.name.toLowerCase());
-                  return (
+                {order.items.map((item, i) => (
                   <div key={i} className="flex gap-2 items-start">
                     <span className="font-bold">{item.qty}x</span>
-                    <div className="flex flex-col">
-                      <span>{item.name}</span>
-                      {menuItem && (
-                        <div className={`text-xs mt-1 font-bold px-2 py-0.5 rounded w-fit ${menuItem.stock === 0 ? 'bg-red-500/10 text-red-600' : menuItem.stock < 10 ? 'bg-yellow-500/10 text-yellow-600' : 'bg-green-500/10 text-green-600'}`}>
-                          {menuItem.stock} in stock
-                        </div>
-                      )}
-                    </div>
+                    <span>{item.name}</span>
                   </div>
-                )})}
+                ))}
               </div>
               
               <div className="p-6 bg-muted/30 flex items-center justify-center md:w-48 shrink-0">

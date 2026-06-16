@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useStaffStore } from "@/store/useStaffStore";
-import { useAdminStore } from "@/store/useAdminStore";
+import { useMenuCatalog } from "@/hooks/useMenuCatalog";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Flame, CheckCircle, Clock, AlertTriangle, ChefHat } from "lucide-react";
@@ -10,7 +10,12 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function KitchenQueue() {
   const { orders, startPreparing, markReady } = useStaffStore();
-  const { menus } = useAdminStore();
+  const { menuItems } = useMenuCatalog();
+  const menus = menuItems.map((m) => ({
+    id: m.id,
+    name: m.name,
+    stock: 0,
+  }));
 
   const queueOrders = orders.filter(o => o.status === 'confirmed' || o.status === 'preparing')
     .sort((a, b) => {

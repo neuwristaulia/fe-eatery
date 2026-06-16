@@ -23,7 +23,7 @@ export interface POSState {
   grandTotal: number;
   
   // Actions
-  setOrderType: (type: OrderType) => void;
+  setOrderType: (type: OrderType | null) => void;
   setSelectedTable: (tableId: string | null) => void;
   setCustomerInfo: (info: POSCustomerInfo | null) => void;
   
@@ -89,10 +89,13 @@ export const usePOSStore = create<POSState>((set) => ({
   removeFromCart: (index) => set((state) => {
     const newCart = [...state.cart];
     newCart.splice(index, 1);
-    // If cart is empty, remove discount
     const newDiscount = newCart.length === 0 ? 0 : state.discount;
     const newDiscountName = newCart.length === 0 ? null : state.discountName;
-    return { cart: newCart, discount: newDiscount, discountName: newDiscountName, ...calculateTotals(newCart, newDiscount) };
+    return {
+      cart: newCart,
+      discountName: newDiscountName,
+      ...calculateTotals(newCart, newDiscount),
+    };
   }),
   
   updateQty: (index, delta) => set((state) => {
@@ -105,9 +108,13 @@ export const usePOSStore = create<POSState>((set) => ({
     }
     const newDiscount = newCart.length === 0 ? 0 : state.discount;
     const newDiscountName = newCart.length === 0 ? null : state.discountName;
-    return { cart: newCart, discount: newDiscount, discountName: newDiscountName, ...calculateTotals(newCart, newDiscount) };
+    return {
+      cart: newCart,
+      discountName: newDiscountName,
+      ...calculateTotals(newCart, newDiscount),
+    };
   }),
-  
+
   updateNotes: (index, notes) => set((state) => {
     const newCart = [...state.cart];
     newCart[index].notes = notes;

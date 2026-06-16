@@ -26,7 +26,7 @@ export default function CustomerLayout({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="min-h-full pb-24 md:pb-0"
+            className="min-h-full pt-28 pb-24 md:pt-24 md:pb-0"
           >
             {children}
           </motion.main>

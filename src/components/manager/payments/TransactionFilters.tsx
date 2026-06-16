@@ -12,6 +12,9 @@ interface TransactionFiltersProps {
   setTypeFilter: (s: string) => void;
   dateFilter: string;
   setDateFilter: (s: string) => void;
+  typeOptions: string[];
+  methodOptions: string[];
+  statusOptions: string[];
 }
 
 export function TransactionFilters({
@@ -19,7 +22,8 @@ export function TransactionFilters({
   methodFilter, setMethodFilter,
   statusFilter, setStatusFilter,
   typeFilter, setTypeFilter,
-  dateFilter, setDateFilter
+  dateFilter, setDateFilter,
+  typeOptions, methodOptions, statusOptions
 }: TransactionFiltersProps) {
 
   const hasActiveFilters = methodFilter !== "All" || statusFilter !== "All" || typeFilter !== "All" || dateFilter !== "";
@@ -66,39 +70,37 @@ export function TransactionFilters({
             <span className="text-sm font-medium text-muted-foreground">Filters:</span>
           </div>
 
-          <select 
-            value={typeFilter} 
+          <select
+            value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value)}
             className="text-sm bg-background border border-border/50 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/20"
           >
             <option value="All">All Order Types</option>
-            <option value="Dine In">Dine In</option>
-            <option value="Take Away">Take Away</option>
-            <option value="Pickup">Pickup</option>
+            {typeOptions.map((opt) => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
           </select>
 
-          <select 
-            value={methodFilter} 
+          <select
+            value={methodFilter}
             onChange={(e) => setMethodFilter(e.target.value)}
             className="text-sm bg-background border border-border/50 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/20"
           >
             <option value="All">All Payment Methods</option>
-            <option value="Cash">Cash</option>
-            <option value="Debit/Credit">Debit/Credit</option>
-            <option value="QRIS">QRIS</option>
-            <option value="E-Wallet">E-Wallet</option>
+            {methodOptions.map((opt) => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
           </select>
 
-          <select 
-            value={statusFilter} 
+          <select
+            value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="text-sm bg-background border border-border/50 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/20"
           >
             <option value="All">All Statuses</option>
-            <option value="Success">Success</option>
-            <option value="Pending">Pending</option>
-            <option value="Failed">Failed</option>
-            <option value="Cancelled">Cancelled</option>
+            {statusOptions.map((opt) => (
+              <option key={opt} value={opt} className="capitalize">{opt}</option>
+            ))}
           </select>
         </div>
 

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { usePOSStore } from "@/store/usePOSStore";
-import { useAdminStore } from "@/store/useAdminStore";
+import { useMenuCatalog } from "@/hooks/useMenuCatalog";
+import { stocksApi } from "@/lib/api";
 import { Search, ArrowLeft, Trash2, Edit3, CheckCircle, ShoppingBag, Gift, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
@@ -23,8 +24,38 @@ export function POSMenu() {
     addToCart, removeFromCart, updateQty, updateNotes, removeDiscount, resetPOS, setOrderType, setSelectedTable, setCustomerInfo
   } = usePOSStore();
 
-  const { menus, categories } = useAdminStore();
-  const menuCategories = ["All", ...categories.map(c => c.name)];
+  const { categories: apiCategories, menuItems, loading } = useMenuCatalog();
+  const [stockByMenu, setStockByMenu] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    stocksApi.listStocks().then((stocks) => {
+      const map: Record<string, number> = {};
+      stocks.forEach((s) => {
+        map[String(s.menu_id)] = s.quantity;
+      });
+      setStockByMenu(map);
+    }).catch(() => {});
+  }, []);
+
+  const catNameById = useMemo(
+    () => Object.fromEntries(apiCategories.map((c) => [c.id, c.name])),
+    [apiCategories],
+  );
+
+  const menus = useMemo(
+    () =>
+      menuItems.map((m) => ({
+        id: m.id,
+        name: m.name,
+        category: catNameById[m.categoryId] || "Uncategorized",
+        price: `Rp ${m.price.toLocaleString("id-ID")}`,
+        stock: stockByMenu[m.id] ?? 99,
+        image: m.image || "☕",
+      })),
+    [menuItems, catNameById, stockByMenu],
+  );
+
+  const menuCategories = ["All", ...apiCategories.map((c) => c.name)];
 
   const filteredMenu = menus.filter((item) => {
     const matchesCat = activeCategory === "All" || item.category === activeCategory;

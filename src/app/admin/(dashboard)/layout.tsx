@@ -1,25 +1,40 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAdminStore } from "@/store/useAdminStore";
 import { Sidebar } from "@/components/admin/Sidebar";
 import { TopNav } from "@/components/admin/TopNav";
 
+// Modules hidden from the Admin UI (see Sidebar.tsx `hidden` entries). Their routes, pages, and
+// APIs remain intact for a future re-enable, but direct navigation is blocked here.
+const DISABLED_ADMIN_ROUTES = ["/admin/orders", "/admin/categories", "/admin/payments", "/admin/staff"];
+
 export default function AdminDashboardLayout({ children }: { children: React.ReactNode }) {
-  const { isAdminAuthenticated } = useAdminStore();
-  const router = useRouter();
+  const { isAdminAuthenticated, fetchAllData } = useAdminStore();
   const [collapsed, setCollapsed] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     setIsMounted(true);
     if (!isAdminAuthenticated) {
       window.location.href = "/admin/login";
+      return;
     }
-  }, [isAdminAuthenticated]);
+    fetchAllData();
+  }, [isAdminAuthenticated, fetchAllData]);
 
-  if (!isMounted || !isAdminAuthenticated) {
+  useEffect(() => {
+    if (DISABLED_ADMIN_ROUTES.some((route) => pathname.startsWith(route))) {
+      router.replace("/admin/dashboard");
+    }
+  }, [pathname, router]);
+
+  const isDisabledRoute = DISABLED_ADMIN_ROUTES.some((route) => pathname.startsWith(route));
+
+  if (!isMounted || !isAdminAuthenticated || isDisabledRoute) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>

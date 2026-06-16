@@ -14,13 +14,15 @@ export default function KitchenLayout({
 }) {
   const [collapsed, setCollapsed] = React.useState(false); // Default expanded for kitchen
   const router = useRouter();
-  const { staffAuthenticated, staffData, logout, login } = useStaffStore();
+  const { staffAuthenticated, staffData, logout, fetchStaffData } = useStaffStore();
 
   React.useEffect(() => {
     if (!staffAuthenticated) {
       router.push("/kitchen/login");
+      return;
     }
-  }, [staffAuthenticated, router]);
+    fetchStaffData();
+  }, [staffAuthenticated, router, fetchStaffData]);
 
   if (!staffAuthenticated) return <div className="min-h-screen flex items-center justify-center">Redirecting to login...</div>;
 

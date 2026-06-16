@@ -4,22 +4,15 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Search, AlertTriangle, ArrowUpRight, Package, ArrowDown, X, Plus, Minus, Trash2 } from "lucide-react";
+import { Search, AlertTriangle, Package, X, Plus, Minus } from "lucide-react";
 import { useAdminStore } from "@/store/useAdminStore";
 
 export default function AdminStockPage() {
-  const { stocks, addStock, updateStock, deleteStock } = useAdminStore();
-  
+  const { stocks, updateStock } = useAdminStore();
+
   // Modals state
   const [editingStock, setEditingStock] = useState<any>(null);
   const [updateAmount, setUpdateAmount] = useState(0);
-  
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [newItemName, setNewItemName] = useState("");
-  const [newItemCategory, setNewItemCategory] = useState("Raw Material");
-  const [newItemUnit, setNewItemUnit] = useState("kg");
-  const [newItemMin, setNewItemMin] = useState(10);
-  const [newItemCurrent, setNewItemCurrent] = useState(0);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
@@ -31,33 +24,12 @@ export default function AdminStockPage() {
 
   const saveUpdate = () => {
     if (!editingStock) return;
-    
-    const newStatus = updateAmount <= editingStock.min ? "low" : "normal";
-    updateStock(editingStock.id, { 
-      ...editingStock, 
-      current: updateAmount, 
-      status: newStatus 
+
+    updateStock(editingStock.id, {
+      current: updateAmount,
+      min: editingStock.min,
     });
     setEditingStock(null);
-  };
-
-  const handleAddNewItem = () => {
-    if (!newItemName) return;
-
-    const newStock = {
-      id: `STK-${Math.floor(10 + Math.random() * 90)}`,
-      item: newItemName,
-      category: newItemCategory,
-      current: newItemCurrent,
-      unit: newItemUnit,
-      min: newItemMin,
-      status: newItemCurrent <= newItemMin ? "low" : "normal"
-    };
-
-    addStock(newStock);
-    setIsAddModalOpen(false);
-    setNewItemName("");
-    setNewItemCurrent(0);
   };
 
   const filteredStocks = stocks.filter(stock => {
@@ -75,12 +47,6 @@ export default function AdminStockPage() {
         <div>
           <h1 className="text-3xl font-serif font-bold text-foreground">Stock Management</h1>
           <p className="text-muted-foreground">Pantau ketersediaan bahan baku dan packaging.</p>
-        </div>
-        <div className="flex gap-2">
-          <Button onClick={() => setIsAddModalOpen(true)} className="bg-primary hover:bg-primary/90 text-white rounded-full px-6">
-            <Plus className="w-4 h-4 mr-2" />
-            Add New Item
-          </Button>
         </div>
       </div>
 
@@ -172,9 +138,6 @@ export default function AdminStockPage() {
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-3">
                       <button onClick={() => openUpdateModal(item)} className="text-primary hover:underline font-medium text-xs">Update</button>
-                      <button onClick={() => deleteStock(item.id)} className="text-muted-foreground hover:text-red-500 transition-colors">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
                     </div>
                   </td>
                 </motion.tr>
@@ -226,67 +189,6 @@ export default function AdminStockPage() {
               <div className="p-6 border-t border-border/50 flex justify-end gap-3 bg-muted/20">
                 <Button variant="outline" onClick={() => setEditingStock(null)} className="rounded-full px-6">Cancel</Button>
                 <Button onClick={saveUpdate} className="rounded-full px-8 bg-primary hover:bg-primary/90 text-white shadow-lg">Save</Button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Add New Item Modal */}
-      <AnimatePresence>
-        {isAddModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-card w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-border/50"
-            >
-              <div className="p-6 border-b border-border/50 flex justify-between items-center bg-muted/30">
-                <h2 className="text-xl font-serif font-bold">Add New Stock Item</h2>
-                <button onClick={() => setIsAddModalOpen(false)} className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="p-6 space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Item Name</label>
-                  <input value={newItemName} onChange={e => setNewItemName(e.target.value)} type="text" className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="e.g. Susu Segar" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Category</label>
-                    <select value={newItemCategory} onChange={e => setNewItemCategory(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20">
-                      <option>Raw Material</option>
-                      <option>Packaging</option>
-                      <option>Utensils</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Unit</label>
-                    <select value={newItemUnit} onChange={e => setNewItemUnit(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20">
-                      <option>kg</option>
-                      <option>pcs</option>
-                      <option>pack</option>
-                      <option>kaleng</option>
-                      <option>liter</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Initial Stock</label>
-                    <input value={newItemCurrent} onChange={e => setNewItemCurrent(Number(e.target.value))} type="number" className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Min Stock Alert</label>
-                    <input value={newItemMin} onChange={e => setNewItemMin(Number(e.target.value))} type="number" className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                  </div>
-                </div>
-              </div>
-              <div className="p-6 border-t border-border/50 flex justify-end gap-3 bg-muted/20">
-                <Button variant="outline" onClick={() => setIsAddModalOpen(false)} className="rounded-full px-6">Cancel</Button>
-                <Button disabled={!newItemName} onClick={handleAddNewItem} className="rounded-full px-8 bg-primary hover:bg-primary/90 text-white shadow-lg disabled:opacity-50">Add Item</Button>
               </div>
             </motion.div>
           </div>

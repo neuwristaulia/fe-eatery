@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { menuItems, categories } from "@/lib/dummy-data";
+import { useMenuCatalog } from "@/hooks/useMenuCatalog";
 import { useStore, type CartItem } from "@/store/useStore";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -12,10 +12,17 @@ import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
 function MenuContent() {
+  const { categories, menuItems, loading, error } = useMenuCatalog();
   const searchParams = useSearchParams();
-  const defaultCategory = searchParams.get("category") || categories[0].id;
+  const defaultCategory = searchParams.get("category") || categories[0]?.id || "";
   
   const [activeCategory, setActiveCategory] = React.useState(defaultCategory);
+
+  React.useEffect(() => {
+    if (categories.length > 0 && !activeCategory) {
+      setActiveCategory(categories[0].id);
+    }
+  }, [categories, activeCategory]);
   const [searchQuery, setSearchQuery] = React.useState("");
   const addToCart = useStore((state) => state.addToCart);
   const cart = useStore((state) => state.cart);
@@ -46,6 +53,25 @@ function MenuContent() {
   const getQuantity = (id: string) => {
     return cart.find(item => item.id === id)?.quantity || 0;
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center pt-20">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center pt-20 px-4 text-center">
+        <p className="text-red-600 mb-2">{error}</p>
+        <p className="text-sm text-muted-foreground">
+          Pastikan backend berjalan di {process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen pt-24 pb-20 md:pb-12">
@@ -106,15 +132,11 @@ function MenuContent() {
                   <Card className="h-full overflow-hidden border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-1 bg-card rounded-[2rem] flex flex-col group">
                     <div className="relative h-48 sm:h-56 overflow-hidden">
                       <div className="absolute inset-0 bg-black/5 group-hover:bg-transparent transition-colors z-10" />
-                      <img 
-                        src={item.image} 
-                        alt={item.name} 
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                      <img
+                        src={item.image}
+                        alt={item.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                       />
-                      <div className="absolute top-4 left-4 z-20 bg-background/90 backdrop-blur-md px-3 py-1 rounded-full flex items-center gap-1 shadow-sm">
-                        <span className="text-yellow-500 text-xs">★</span>
-                        <span className="text-xs font-bold">4.8</span>
-                      </div>
                     </div>
                     <CardContent className="p-5 flex-1 flex flex-col justify-between">
                       <div>

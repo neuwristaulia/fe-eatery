@@ -1,86 +1,132 @@
 "use client";
 
 import * as React from "react";
-import { Wallet, CreditCard, Banknote, Smartphone, CheckCircle, XCircle } from "lucide-react";
+import { Wallet, Banknote, CheckCircle, XCircle, Download } from "lucide-react";
 import { AnalyticsCard } from "@/components/ui/AnalyticsCard";
+import { Button } from "@/components/ui/Button";
 import { TransactionTable } from "@/components/manager/payments/TransactionTable";
 import { TransactionFilters } from "@/components/manager/payments/TransactionFilters";
 import { TransactionDetailModal } from "@/components/manager/payments/TransactionDetailModal";
 import { ExportButton } from "@/components/manager/payments/ExportButton";
 import { TransactionDetail } from "@/types/payment";
+import { paymentsApi, type ApiPayment } from "@/lib/api";
+import { formatRupiah } from "@/lib/api/mappers";
+import { exportToPdf, type ExportColumn, type ExportRow } from "@/lib/export";
 
-// Extended Mock Data for comprehensive testing
-const mockTransactions: TransactionDetail[] = [
-  { 
-    id: "PAY-901", orderId: "ORD-120", customerName: "Ahmad", orderType: "Dine In", paymentMethod: "QRIS", amount: 120000, status: "Success", date: "2026-05-24 19:35",
-    tableNumber: "T-05", subtotal: 109091, tax: 10909, loyaltyPointsEarned: 120,
-    items: [{ id: "i1", name: "Kopi e-Eatery Signature", quantity: 2, price: 30000 }, { id: "i2", name: "Kaya Toast", quantity: 1, price: 60000 }],
-    timeline: [
-      { status: "Pending", timestamp: "2026-05-24 19:30", note: "Order placed" },
-      { status: "Success", timestamp: "2026-05-24 19:35", note: "QRIS payment confirmed" }
-    ]
-  },
-  { 
-    id: "PAY-902", orderId: "ORD-121", customerName: "Sarah", orderType: "Take Away", paymentMethod: "Cash", amount: 85000, status: "Success", date: "2026-05-24 19:46",
-    subtotal: 77273, tax: 7727,
-    items: [{ id: "i3", name: "Nasi Goreng Spesial", quantity: 1, price: 85000 }],
-    timeline: [
-      { status: "Pending", timestamp: "2026-05-24 19:45" },
-      { status: "Success", timestamp: "2026-05-24 19:46", note: "Paid at cashier" }
-    ]
-  },
-  { 
-    id: "PAY-903", orderId: "ORD-122", customerName: "Budi", orderType: "Dine In", paymentMethod: "Debit/Credit", amount: 210000, status: "Success", date: "2026-05-24 20:05",
-    tableNumber: "T-12", subtotal: 190909, tax: 19091, voucherUsed: "WELCOME10",
-    items: [{ id: "i4", name: "Ribeye Steak", quantity: 1, price: 210000 }],
-    timeline: [
-      { status: "Pending", timestamp: "2026-05-24 20:00" },
-      { status: "Success", timestamp: "2026-05-24 20:05", note: "Card ending in 4021" }
-    ]
-  },
-  { 
-    id: "PAY-904", orderId: "ORD-124", customerName: "Citra", orderType: "Pickup", paymentMethod: "E-Wallet", amount: 340000, status: "Failed", date: "2026-05-24 20:32",
-    subtotal: 309091, tax: 30909,
-    items: [{ id: "i5", name: "Family Package A", quantity: 1, price: 340000 }],
-    timeline: [
-      { status: "Pending", timestamp: "2026-05-24 20:30" },
-      { status: "Failed", timestamp: "2026-05-24 20:32", note: "Payment gateway timeout" }
-    ]
-  },
-  { 
-    id: "PAY-890", orderId: "ORD-099", customerName: "Deni", orderType: "Dine In", paymentMethod: "Cash", amount: 150000, status: "Cancelled", date: "2026-05-23 14:20",
-    tableNumber: "T-02", subtotal: 136364, tax: 13636,
-    items: [{ id: "i6", name: "Ayam Bakar", quantity: 2, price: 75000 }],
-    timeline: [
-      { status: "Pending", timestamp: "2026-05-23 14:15" },
-      { status: "Cancelled", timestamp: "2026-05-23 14:20", note: "Customer left before paying" }
-    ]
-  },
-];
+function formatOrderType(type?: string): string {
+  if (type === "dine-in") return "Dine In";
+  if (type === "takeaway") return "Take Away";
+  return type || "-";
+}
+
+function formatPaymentMethod(payment: ApiPayment): string {
+  if (payment.method === "cash") return "Cash";
+  const type = payment.payment_type;
+  if (!type) return "Midtrans";
+  if (type === "qris") return "QRIS";
+  return type
+    .split("_")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+function toTransactionDetail(payment: ApiPayment): TransactionDetail {
+  const order = payment.order;
+  const items = (order?.order_items ?? []).map((item, i) => ({
+    id: String(item.id ?? i),
+    name: item.menu_name || item.menu?.name || `Menu #${item.menu_id}`,
+    quantity: item.quantity,
+    price: item.price ?? item.menu?.price ?? 0,
+  }));
+
+  const amount = payment.total_payment ?? order?.total_price ?? 0;
+  const createdAt = payment.created_at ?? order?.created_at;
+
+  const timeline: TransactionDetail["timeline"] = [];
+  if (createdAt) {
+    timeline.push({
+      status: "pending",
+      timestamp: new Date(createdAt).toLocaleString("id-ID"),
+      note: "Payment created",
+    });
+  }
+  if (payment.paid_at) {
+    timeline.push({
+      status: payment.status,
+      timestamp: new Date(payment.paid_at).toLocaleString("id-ID"),
+      note: `Payment ${payment.status}`,
+    });
+  } else if (payment.status !== "pending" && payment.status !== "unpaid") {
+    timeline.push({
+      status: payment.status,
+      timestamp: createdAt ? new Date(createdAt).toLocaleString("id-ID") : "-",
+    });
+  }
+
+  return {
+    id: `PAY-${payment.id}`,
+    orderId: `ORD-${payment.order_id}`,
+    customerName: order?.user?.name || "Guest",
+    orderType: formatOrderType(order?.order_type),
+    paymentMethod: formatPaymentMethod(payment),
+    amount,
+    status: payment.status,
+    date: createdAt ? new Date(createdAt).toLocaleString("id-ID") : "-",
+    items,
+    tableNumber: order?.table?.table_number != null ? `T-${order.table.table_number}` : undefined,
+    subtotal: amount,
+    tax: 0,
+    timeline,
+  };
+}
 
 export default function PaymentMonitoringPage() {
+  const [transactions, setTransactions] = React.useState<TransactionDetail[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+
   const [searchTerm, setSearchTerm] = React.useState("");
   const [methodFilter, setMethodFilter] = React.useState("All");
   const [statusFilter, setStatusFilter] = React.useState("All");
   const [typeFilter, setTypeFilter] = React.useState("All");
   const [dateFilter, setDateFilter] = React.useState("");
-  
-  const [selectedTx, setSelectedTx] = React.useState<TransactionDetail | null>(null);
-  const [isLoading, setIsLoading] = React.useState(true);
 
-  // Simulate network request
+  const [selectedTx, setSelectedTx] = React.useState<TransactionDetail | null>(null);
+
   React.useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 800);
-    return () => clearTimeout(timer);
+    let mounted = true;
+    paymentsApi
+      .listPayments()
+      .then((data) => {
+        if (mounted) setTransactions(data.map(toTransactionDetail));
+      })
+      .finally(() => {
+        if (mounted) setIsLoading(false);
+      });
+    return () => {
+      mounted = false;
+    };
   }, []);
 
+  const typeOptions = React.useMemo(
+    () => Array.from(new Set(transactions.map((t) => t.orderType))),
+    [transactions],
+  );
+  const methodOptions = React.useMemo(
+    () => Array.from(new Set(transactions.map((t) => t.paymentMethod))),
+    [transactions],
+  );
+  const statusOptions = React.useMemo(
+    () => Array.from(new Set(transactions.map((t) => t.status))),
+    [transactions],
+  );
+
   const filteredTransactions = React.useMemo(() => {
-    return mockTransactions.filter(tx => {
-      const matchSearch = 
-        tx.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    return transactions.filter((tx) => {
+      const matchSearch =
+        tx.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         tx.orderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
         tx.customerName.toLowerCase().includes(searchTerm.toLowerCase());
-      
+
       const matchMethod = methodFilter === "All" || tx.paymentMethod === methodFilter;
       const matchStatus = statusFilter === "All" || tx.status === statusFilter;
       const matchType = typeFilter === "All" || tx.orderType === typeFilter;
@@ -88,37 +134,42 @@ export default function PaymentMonitoringPage() {
 
       return matchSearch && matchMethod && matchStatus && matchType && matchDate;
     });
-  }, [searchTerm, methodFilter, statusFilter, typeFilter, dateFilter]);
+  }, [transactions, searchTerm, methodFilter, statusFilter, typeFilter, dateFilter]);
 
-  // Analytics Calculations based on filtered data (or all data, depending on requirement)
-  // For monitoring, usually summary reflects the *filtered* view to help analysis
   const totalRevenue = filteredTransactions
-    .filter(t => t.status === "Success")
+    .filter((t) => t.status === "paid")
     .reduce((sum, t) => sum + t.amount, 0);
 
-  const successCount = filteredTransactions.filter(t => t.status === "Success").length;
-  const failedCount = filteredTransactions.filter(t => t.status === "Failed" || t.status === "Cancelled").length;
+  const successCount = filteredTransactions.filter((t) => t.status === "paid").length;
+  const failedCount = filteredTransactions.filter(
+    (t) => t.status === "failed" || t.status === "cancelled" || t.status === "refunded",
+  ).length;
 
-  // Find most used method
-  const methodCounts = filteredTransactions.reduce((acc, t) => {
-    if (t.status === "Success") {
-      acc[t.paymentMethod] = (acc[t.paymentMethod] || 0) + 1;
-    }
-    return acc;
-  }, {} as Record<string, number>);
-  
-  const mostUsedMethod = Object.entries(methodCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "N/A";
+  const exportColumns: ExportColumn[] = [
+    { header: "Payment ID", key: "id" },
+    { header: "Order ID", key: "orderId" },
+    { header: "Date", key: "date" },
+    { header: "Customer", key: "customerName" },
+    { header: "Type", key: "orderType" },
+    { header: "Method", key: "paymentMethod" },
+    { header: "Amount", key: "amount" },
+    { header: "Status", key: "status" },
+  ];
 
-  const getMethodIcon = (method: string) => {
-    if (method === "Cash") return Banknote;
-    if (method === "Debit/Credit") return CreditCard;
-    if (method === "QRIS") return Smartphone;
-    return Wallet; // Default / E-Wallet
-  };
+  const exportRows: ExportRow[] = filteredTransactions.map((tx) => ({
+    id: tx.id,
+    orderId: tx.orderId,
+    date: tx.date,
+    customerName: tx.customerName,
+    orderType: tx.orderType,
+    paymentMethod: tx.paymentMethod,
+    amount: formatRupiah(tx.amount),
+    status: tx.status,
+  }));
 
   return (
     <div className="space-y-8 max-w-[1600px] mx-auto pb-10 relative">
-      
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -127,62 +178,67 @@ export default function PaymentMonitoringPage() {
           </h1>
           <p className="text-muted-foreground mt-1">Advanced analytics and tracking for all cafe transactions.</p>
         </div>
-        <ExportButton data={filteredTransactions} filename="eeatery_transactions" />
+        <div className="flex items-center gap-3">
+          <ExportButton data={filteredTransactions} filename="eeatery_transactions" />
+          <Button
+            variant="outline"
+            className="gap-2 bg-card border-border/50"
+            onClick={() => exportToPdf("Payment Monitoring Report", exportColumns, exportRows)}
+          >
+            <Download className="w-4 h-4" /> Export PDF
+          </Button>
+        </div>
       </div>
 
       {/* Analytics Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <AnalyticsCard 
-          title="Total Filtered Revenue" 
-          value={`Rp ${(totalRevenue / 1000000).toFixed(1)}M`} 
-          icon={Banknote} 
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <AnalyticsCard
+          title="Total Filtered Revenue"
+          value={formatRupiah(totalRevenue)}
+          icon={Banknote}
         />
-        <AnalyticsCard 
-          title="Successful Transactions" 
-          value={successCount} 
-          icon={CheckCircle} 
-          iconColorClass="text-green-500" 
-          iconBgClass="bg-green-500/10" 
+        <AnalyticsCard
+          title="Successful Transactions"
+          value={successCount}
+          icon={CheckCircle}
+          iconColorClass="text-green-500"
+          iconBgClass="bg-green-500/10"
         />
-        <AnalyticsCard 
-          title="Failed / Cancelled" 
-          value={failedCount} 
-          icon={XCircle} 
-          iconColorClass="text-red-500" 
-          iconBgClass="bg-red-500/10" 
-        />
-        <AnalyticsCard 
-          title="Most Used Method" 
-          value={mostUsedMethod} 
-          icon={getMethodIcon(mostUsedMethod)} 
-          iconColorClass="text-blue-500" 
-          iconBgClass="bg-blue-500/10" 
+        <AnalyticsCard
+          title="Failed / Cancelled"
+          value={failedCount}
+          icon={XCircle}
+          iconColorClass="text-red-500"
+          iconBgClass="bg-red-500/10"
         />
       </div>
 
       {/* Filters */}
-      <TransactionFilters 
+      <TransactionFilters
         searchTerm={searchTerm} setSearchTerm={setSearchTerm}
         methodFilter={methodFilter} setMethodFilter={setMethodFilter}
         statusFilter={statusFilter} setStatusFilter={setStatusFilter}
         typeFilter={typeFilter} setTypeFilter={setTypeFilter}
         dateFilter={dateFilter} setDateFilter={setDateFilter}
+        typeOptions={typeOptions}
+        methodOptions={methodOptions}
+        statusOptions={statusOptions}
       />
 
       {/* Data Table */}
-      <TransactionTable 
-        data={filteredTransactions} 
-        isLoading={isLoading} 
-        onViewDetail={(tx) => setSelectedTx(tx as any)} 
+      <TransactionTable
+        data={filteredTransactions}
+        isLoading={isLoading}
+        onViewDetail={(tx) => setSelectedTx(tx as TransactionDetail)}
       />
 
       {/* View Detail Modal */}
-      <TransactionDetailModal 
-        transaction={selectedTx} 
-        isOpen={!!selectedTx} 
-        onClose={() => setSelectedTx(null)} 
+      <TransactionDetailModal
+        transaction={selectedTx}
+        isOpen={!!selectedTx}
+        onClose={() => setSelectedTx(null)}
       />
-      
+
     </div>
   );
 }

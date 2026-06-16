@@ -1,6 +1,6 @@
-export type OrderType = "Dine In" | "Take Away" | "Pickup";
-export type PaymentMethod = "Cash" | "Debit/Credit" | "QRIS" | "E-Wallet";
-export type PaymentStatus = "Success" | "Pending" | "Failed" | "Cancelled";
+export type OrderType = string;
+export type PaymentMethod = string;
+export type PaymentStatus = string;
 
 export interface OrderItem {
   id: string;

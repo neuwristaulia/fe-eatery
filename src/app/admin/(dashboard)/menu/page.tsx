@@ -3,18 +3,28 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/Card";
-import { Search, Plus, Edit2, Trash2, X, Upload } from "lucide-react";
+import { Search, Plus, Edit2, Trash2, X, Upload, Tags } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useAdminStore } from "@/store/useAdminStore";
+import { CategoryHasMenusError } from "@/lib/api/services/categories";
 
 export default function AdminMenuPage() {
-  const { menus, addMenu, updateMenu, deleteMenu } = useAdminStore();
+  const {
+    menus,
+    categories,
+    addMenu,
+    updateMenu,
+    deleteMenu,
+    addCategory,
+    updateCategory,
+    deleteCategory,
+  } = useAdminStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingMenu, setEditingMenu] = useState<any>(null);
 
   // Form State
   const [name, setName] = useState("");
-  const [category, setCategory] = useState("Signatures");
+  const [category, setCategory] = useState("");
   const [price, setPrice] = useState("");
   const [description, setDescription] = useState("");
   const [image, setImage] = useState("");
@@ -22,10 +32,24 @@ export default function AdminMenuPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All Categories");
 
+  // Category management state
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<any>(null);
+  const [catName, setCatName] = useState("");
+  const [catDescription, setCatDescription] = useState("");
+  const [catSaving, setCatSaving] = useState(false);
+  const [catError, setCatError] = useState("");
+
+  // Reassignment dialog state (shown when deleting a category that still has menus)
+  const [reassignCategory, setReassignCategory] = useState<any>(null);
+  const [reassignMenuCount, setReassignMenuCount] = useState(0);
+  const [reassignTargetId, setReassignTargetId] = useState("");
+  const [reassignSaving, setReassignSaving] = useState(false);
+
   const openAddModal = () => {
     setEditingMenu(null);
     setName("");
-    setCategory("Signatures");
+    setCategory(categories[0]?.name || "");
     setPrice("");
     setDescription("");
     setImage("");
@@ -55,10 +79,10 @@ export default function AdminMenuPage() {
 
   const handleSave = () => {
     if (!name || !price) return;
-    
+
     const formattedPrice = `Rp ${Number(price).toLocaleString('id-ID')}`;
     const finalImage = image || "https://images.unsplash.com/photo-1541167760496-1628856ab772?w=150"; // default if empty
-    
+
     if (editingMenu) {
       updateMenu(editingMenu.id, {
         ...editingMenu,
@@ -84,11 +108,89 @@ export default function AdminMenuPage() {
   };
 
   const filteredMenus = menus.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           item.id.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = categoryFilter === "All Categories" || item.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });
+
+  // --- Category management handlers ---
+
+  const openCategoryManager = () => {
+    setEditingCategory(null);
+    setCatName("");
+    setCatDescription("");
+    setCatError("");
+    setIsCategoryModalOpen(true);
+  };
+
+  const startEditCategory = (cat: any) => {
+    setEditingCategory(cat);
+    setCatName(cat.name);
+    setCatDescription(cat.description || "");
+    setCatError("");
+  };
+
+  const cancelEditCategory = () => {
+    setEditingCategory(null);
+    setCatName("");
+    setCatDescription("");
+    setCatError("");
+  };
+
+  const handleSaveCategory = async () => {
+    if (!catName.trim()) return;
+    setCatSaving(true);
+    setCatError("");
+    try {
+      if (editingCategory) {
+        await updateCategory(editingCategory.id, {
+          name: catName.trim(),
+          description: catDescription.trim(),
+        });
+      } else {
+        await addCategory({
+          name: catName.trim(),
+          description: catDescription.trim(),
+        });
+      }
+      cancelEditCategory();
+    } catch (err) {
+      setCatError(err instanceof Error ? err.message : "Failed to save category");
+    } finally {
+      setCatSaving(false);
+    }
+  };
+
+  const handleDeleteCategory = async (cat: any) => {
+    setCatError("");
+    try {
+      await deleteCategory(cat.id);
+    } catch (err) {
+      if (err instanceof CategoryHasMenusError) {
+        setReassignCategory(cat);
+        setReassignMenuCount(err.menuCount);
+        setReassignTargetId("");
+      } else {
+        setCatError(err instanceof Error ? err.message : "Failed to delete category");
+      }
+    }
+  };
+
+  const handleConfirmReassign = async () => {
+    if (!reassignCategory || !reassignTargetId) return;
+    setReassignSaving(true);
+    try {
+      await deleteCategory(reassignCategory.id, reassignTargetId);
+      setReassignCategory(null);
+      setReassignMenuCount(0);
+      setReassignTargetId("");
+    } catch (err) {
+      setCatError(err instanceof Error ? err.message : "Failed to reassign and delete category");
+    } finally {
+      setReassignSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -97,34 +199,38 @@ export default function AdminMenuPage() {
           <h1 className="text-3xl font-serif font-bold text-foreground">Menu Management</h1>
           <p className="text-muted-foreground">Tambah, edit, atau hapus menu restoran.</p>
         </div>
-        <Button onClick={openAddModal} className="bg-primary hover:bg-primary/90 text-white rounded-full px-6 flex items-center gap-2">
-          <Plus className="w-4 h-4" />
-          Add New Menu
-        </Button>
+        <div className="flex gap-3">
+          <Button onClick={openCategoryManager} variant="outline" className="rounded-full px-6 flex items-center gap-2">
+            <Tags className="w-4 h-4" />
+            Manage Categories
+          </Button>
+          <Button onClick={openAddModal} className="bg-primary hover:bg-primary/90 text-white rounded-full px-6 flex items-center gap-2">
+            <Plus className="w-4 h-4" />
+            Add New Menu
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-          <input 
-            type="text" 
-            placeholder="Search menu..." 
+          <input
+            type="text"
+            placeholder="Search menu..."
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-card focus:ring-2 focus:ring-primary/20 outline-none"
           />
         </div>
-        <select 
+        <select
           value={categoryFilter}
           onChange={e => setCategoryFilter(e.target.value)}
           className="px-4 py-3 rounded-xl border border-border bg-card outline-none focus:ring-2 focus:ring-primary/20"
         >
           <option>All Categories</option>
-          <option>Signatures</option>
-          <option>Rice</option>
-          <option>Noodles</option>
-          <option>Toast</option>
-          <option>Drinks</option>
+          {categories.map((cat) => (
+            <option key={cat.id} value={cat.name}>{cat.name}</option>
+          ))}
         </select>
       </div>
 
@@ -213,7 +319,9 @@ export default function AdminMenuPage() {
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Category</label>
                     <select value={category} onChange={e => setCategory(e.target.value)} className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20">
-                      <option>Signatures</option><option>Rice</option><option>Noodles</option><option>Toast</option><option>Drinks</option>
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.name}>{cat.name}</option>
+                      ))}
                     </select>
                   </div>
                   <div className="space-y-2">
@@ -230,6 +338,168 @@ export default function AdminMenuPage() {
               <div className="p-6 border-t border-border/50 flex justify-end gap-3 bg-muted/20">
                 <Button variant="outline" onClick={() => setIsModalOpen(false)} className="rounded-full px-6">Cancel</Button>
                 <Button disabled={!name || !price} onClick={handleSave} className="rounded-full px-8 bg-primary hover:bg-primary/90 text-white shadow-lg disabled:opacity-50">Save Menu</Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal Manage Categories */}
+      <AnimatePresence>
+        {isCategoryModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-card w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-border/50 flex flex-col max-h-[90vh]"
+            >
+              <div className="p-6 border-b border-border/50 flex justify-between items-center shrink-0">
+                <h2 className="text-xl font-serif font-bold">Manage Categories</h2>
+                <button
+                  onClick={() => {
+                    setIsCategoryModalOpen(false);
+                    cancelEditCategory();
+                  }}
+                  className="p-2 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="p-6 space-y-4 overflow-y-auto min-h-0">
+                <div className="space-y-3 p-4 rounded-2xl bg-muted/30 border border-border/50">
+                  <h3 className="text-sm font-semibold">{editingCategory ? "Edit Category" : "Add New Category"}</h3>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Name</label>
+                    <input
+                      value={catName}
+                      onChange={e => setCatName(e.target.value)}
+                      type="text"
+                      className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      placeholder="e.g. Beverages"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Description</label>
+                    <input
+                      value={catDescription}
+                      onChange={e => setCatDescription(e.target.value)}
+                      type="text"
+                      className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+                      placeholder="Optional description"
+                    />
+                  </div>
+                  {catError && <p className="text-sm text-red-600">{catError}</p>}
+                  <div className="flex justify-end gap-2">
+                    {editingCategory && (
+                      <Button variant="outline" onClick={cancelEditCategory} disabled={catSaving} className="rounded-full px-4">
+                        Cancel
+                      </Button>
+                    )}
+                    <Button
+                      onClick={handleSaveCategory}
+                      disabled={!catName.trim() || catSaving}
+                      className="rounded-full px-6 bg-primary hover:bg-primary/90 text-white disabled:opacity-50"
+                    >
+                      {catSaving ? "Saving..." : editingCategory ? "Update Category" : "Add Category"}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  {categories.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">No categories yet.</p>
+                  ) : categories.map((cat) => (
+                    <div key={cat.id} className="flex items-center justify-between p-3 rounded-xl border border-border/50 bg-card">
+                      <div>
+                        <p className="font-medium text-foreground">{cat.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {cat.description || "No description"} &middot; {cat.items} menu{cat.items === 1 ? "" : "s"}
+                        </p>
+                      </div>
+                      <div className="flex gap-1">
+                        <button onClick={() => startEditCategory(cat)} className="p-2 text-blue-600 hover:bg-muted rounded-lg transition-colors">
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDeleteCategory(cat)} className="p-2 text-red-600 hover:bg-muted rounded-lg transition-colors">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="p-6 border-t border-border/50 flex justify-end gap-3 bg-muted/20">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsCategoryModalOpen(false);
+                    cancelEditCategory();
+                  }}
+                  className="rounded-full px-6"
+                >
+                  Close
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal Reassign Menus Before Deleting Category */}
+      <AnimatePresence>
+        {reassignCategory && (
+          <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-card w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-border/50"
+            >
+              <div className="p-6 border-b border-border/50">
+                <h2 className="text-xl font-serif font-bold">Reassign Menus Before Deleting</h2>
+              </div>
+              <div className="p-6 space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  &ldquo;{reassignCategory.name}&rdquo; still has {reassignMenuCount} menu{reassignMenuCount === 1 ? "" : "s"} assigned.
+                  Choose another category to move {reassignMenuCount === 1 ? "it" : "them"} to before deleting this category.
+                </p>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Move menus to</label>
+                  <select
+                    value={reassignTargetId}
+                    onChange={e => setReassignTargetId(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option value="">Select category...</option>
+                    {categories.filter((c) => c.id !== reassignCategory.id).map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+                {catError && <p className="text-sm text-red-600">{catError}</p>}
+              </div>
+              <div className="p-6 border-t border-border/50 flex justify-end gap-3 bg-muted/20">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setReassignCategory(null);
+                    setReassignMenuCount(0);
+                    setReassignTargetId("");
+                    setCatError("");
+                  }}
+                  disabled={reassignSaving}
+                  className="rounded-full px-6"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleConfirmReassign}
+                  disabled={!reassignTargetId || reassignSaving}
+                  className="rounded-full px-6 bg-primary hover:bg-primary/90 text-white disabled:opacity-50"
+                >
+                  {reassignSaving ? "Processing..." : "Reassign & Delete"}
+                </Button>
               </div>
             </motion.div>
           </div>

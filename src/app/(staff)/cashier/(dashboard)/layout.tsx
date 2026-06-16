@@ -14,15 +14,17 @@ export default function CashierLayout({
 }) {
   const [collapsed, setCollapsed] = React.useState(false);
   const router = useRouter();
-  const { staffAuthenticated, staffData, logout, login } = useStaffStore();
+  const { staffAuthenticated, staffData, logout, fetchStaffData } = useStaffStore();
 
   const pathname = usePathname();
 
   React.useEffect(() => {
     if (!staffAuthenticated) {
       router.push("/cashier/login");
+      return;
     }
-  }, [staffAuthenticated, router]);
+    fetchStaffData();
+  }, [staffAuthenticated, router, fetchStaffData]);
 
 
 

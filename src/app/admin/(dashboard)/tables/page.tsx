@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -8,8 +8,13 @@ import { Armchair, Users, Plus, Trash2, X, Edit2 } from "lucide-react";
 import { useAdminStore } from "@/store/useAdminStore";
 
 export default function AdminTablesPage() {
-  const { tables, addTable, updateTable, deleteTable } = useAdminStore();
-  
+  const { tables, addTable, updateTable, deleteTable, fetchAllData } = useAdminStore();
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchAllData();
+  }, [fetchAllData]);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingTable, setEditingTable] = useState<any>(null);
 

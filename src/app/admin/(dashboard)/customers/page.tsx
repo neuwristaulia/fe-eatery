@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Search, Trophy, Medal, Award, X, Mail, Phone, MapPin, Calendar, CreditCard, Plus, Minus, Edit2, Trash2, Save } from "lucide-react";
+import { Search, Trophy, Medal, Award, X, Mail, Phone, MapPin, Calendar, Edit2, Trash2, Save } from "lucide-react";
 import { useAdminStore } from "@/store/useAdminStore";
 
 const getTierIcon = (tier: string) => {
@@ -17,12 +17,10 @@ const getTierIcon = (tier: string) => {
 };
 
 export default function AdminCustomersPage() {
-  const { customers, updateCustomerPoints, updateCustomer, deleteCustomer } = useAdminStore();
+  const { customers, updateCustomer, deleteCustomer } = useAdminStore();
   const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
   const [editingCustomer, setEditingCustomer] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isAdjustingPoints, setIsAdjustingPoints] = useState(false);
-  const [pointAdjustment, setPointAdjustment] = useState("");
 
   const handleDeleteCustomer = (id: string) => {
     if (confirm("Are you sure you want to delete this customer?")) {
@@ -33,35 +31,11 @@ export default function AdminCustomersPage() {
     }
   };
 
-  const filteredCustomers = customers.filter(cust => 
-    cust.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+  const filteredCustomers = customers.filter(cust =>
+    cust.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     cust.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
     cust.phone.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  const handleAdjustPoints = () => {
-    if (!selectedCustomer || !pointAdjustment) return;
-    const amount = parseInt(pointAdjustment);
-    if (isNaN(amount)) return;
-    
-    updateCustomerPoints(selectedCustomer.id, amount);
-    
-    // Update local state for immediate UI reflection
-    const newPoints = selectedCustomer.points + amount;
-    let newTier = selectedCustomer.tier;
-    if (newPoints >= 2000) newTier = "Gold";
-    else if (newPoints >= 500) newTier = "Silver";
-    else newTier = "Bronze";
-    
-    setSelectedCustomer({
-      ...selectedCustomer,
-      points: newPoints,
-      tier: newTier
-    });
-    
-    setIsAdjustingPoints(false);
-    setPointAdjustment("");
-  };
 
   return (
     <div className="space-y-6 relative">
@@ -125,7 +99,7 @@ export default function AdminCustomersPage() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex justify-end items-center gap-2">
-                      <Button onClick={() => { setSelectedCustomer(cust); setIsAdjustingPoints(false); }} variant="ghost" size="sm" className="h-8 text-primary">View Profile</Button>
+                      <Button onClick={() => setSelectedCustomer(cust)} variant="ghost" size="sm" className="h-8 text-primary">View Profile</Button>
                       <Button onClick={() => setEditingCustomer(cust)} variant="ghost" size="icon" className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-50"><Edit2 className="w-4 h-4" /></Button>
                       <Button onClick={() => handleDeleteCustomer(cust.id)} variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"><Trash2 className="w-4 h-4" /></Button>
                     </div>
@@ -192,31 +166,7 @@ export default function AdminCustomersPage() {
                         <p className="text-xs text-muted-foreground">Current Points</p>
                         <p className="font-bold text-2xl text-primary">{selectedCustomer.points}</p>
                       </div>
-                      <Button onClick={() => setIsAdjustingPoints(!isAdjustingPoints)} size="sm" variant="outline" className="h-7 text-xs rounded-full border-primary text-primary hover:bg-primary hover:text-white">
-                        {isAdjustingPoints ? "Cancel" : "Adjust"}
-                      </Button>
                     </div>
-
-                    {/* Quick Adjust Input */}
-                    <AnimatePresence>
-                      {isAdjustingPoints && (
-                        <motion.div 
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="pt-3 border-t border-primary/10 mt-3 flex items-center gap-2"
-                        >
-                          <input 
-                            type="number" 
-                            placeholder="e.g. 50 or -20" 
-                            value={pointAdjustment}
-                            onChange={(e) => setPointAdjustment(e.target.value)}
-                            className="flex-1 px-3 py-1 text-sm rounded-lg border border-primary/30 bg-background outline-none focus:ring-1 focus:ring-primary/50" 
-                          />
-                          <Button onClick={handleAdjustPoints} size="sm" className="h-7 px-3 bg-primary text-white rounded-lg">Save</Button>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
                   </div>
                 </div>
 
@@ -281,23 +231,18 @@ export default function AdminCustomersPage() {
                     className="w-full px-3 py-2 text-sm rounded-lg border border-border/50 bg-background outline-none focus:ring-2 focus:ring-primary/20" 
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Address</label>
-                  <textarea 
-                    value={editingCustomer.address}
-                    onChange={(e) => setEditingCustomer({...editingCustomer, address: e.target.value})}
-                    className="w-full px-3 py-2 text-sm rounded-lg border border-border/50 bg-background outline-none focus:ring-2 focus:ring-primary/20 resize-none h-20" 
-                  />
-                </div>
-
                 <div className="pt-4 flex gap-3 justify-end">
                   <Button variant="outline" onClick={() => setEditingCustomer(null)}>Cancel</Button>
-                  <Button className="bg-primary text-white" onClick={() => {
-                    updateCustomer(editingCustomer.id, editingCustomer);
-                    setEditingCustomer(null);
+                  <Button className="bg-primary text-white" onClick={async () => {
+                    await updateCustomer(editingCustomer.id, {
+                      name: editingCustomer.name,
+                      email: editingCustomer.email,
+                      phone: editingCustomer.phone,
+                    });
                     if (selectedCustomer?.id === editingCustomer.id) {
-                      setSelectedCustomer(editingCustomer);
+                      setSelectedCustomer({ ...selectedCustomer, ...editingCustomer });
                     }
+                    setEditingCustomer(null);
                   }}>
                     <Save className="w-4 h-4 mr-2" />
                     Save Changes

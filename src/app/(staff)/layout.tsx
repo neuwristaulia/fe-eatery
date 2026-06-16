@@ -1,5 +1,4 @@
 import React from "react";
-import { Toaster } from "sonner";
 
 export default function StaffLayout({
   children,
@@ -9,7 +8,6 @@ export default function StaffLayout({
   return (
     <div className="min-h-screen bg-background">
       {children}
-      <Toaster position="top-right" richColors />
     </div>
   );
 }

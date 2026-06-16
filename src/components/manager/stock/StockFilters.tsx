@@ -8,12 +8,14 @@ interface StockFiltersProps {
   setCategoryFilter: (s: string) => void;
   statusFilter: string;
   setStatusFilter: (s: string) => void;
+  categoryOptions: string[];
 }
 
 export function StockFilters({
   searchTerm, setSearchTerm,
   categoryFilter, setCategoryFilter,
-  statusFilter, setStatusFilter
+  statusFilter, setStatusFilter,
+  categoryOptions
 }: StockFiltersProps) {
 
   const hasActiveFilters = categoryFilter !== "All" || statusFilter !== "All";
@@ -47,16 +49,15 @@ export function StockFilters({
             <span className="text-sm font-medium text-muted-foreground">Filters:</span>
           </div>
 
-          <select 
-            value={categoryFilter} 
+          <select
+            value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
             className="text-sm bg-background border border-border/50 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/20"
           >
             <option value="All">All Categories</option>
-            <option value="Ingredients">Ingredients</option>
-            <option value="Packaging">Packaging</option>
-            <option value="Supplies">Supplies</option>
-            <option value="Beverages">Beverages</option>
+            {categoryOptions.map((opt) => (
+              <option key={opt} value={opt}>{opt}</option>
+            ))}
           </select>
 
           <select 
